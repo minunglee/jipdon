@@ -315,6 +315,10 @@ const marketKeys = Object.keys(MARKETS) as MarketKey[];
 		setText('value-note', plan.description);
 		setText('contributed', formatKoreanUnit(r.contributed));
 		setText('profit', `${r.profit >= 0 ? '+' : '-'}${formatKoreanUnit(Math.abs(r.profit))}`);
+		// 국내 관례대로 수익은 빨강, 손실은 파랑
+		const profitEl = document.getElementById('profit')!;
+		profitEl.classList.toggle('num-up', r.profit > 0);
+		profitEl.classList.toggle('num-down', r.profit < 0);
 		setText('profit-note', `원금 대비 ${percent(r.profitPercent)}`);
 		setText('cagr', percent(r.cagrPercent));
 		setText('mdd', r.maxDrawdownPercent < 0 ? `${r.maxDrawdownPercent.toFixed(1)}%` : '없음');
@@ -338,6 +342,7 @@ const marketKeys = Object.keys(MARKETS) as MarketKey[];
 					td.textContent = text;
 					tr.append(td);
 				}
+				if (row.returnPercent > 0) tr.classList.add('up');
 				if (row.returnPercent < 0) tr.classList.add('down');
 				return tr;
 			}),
