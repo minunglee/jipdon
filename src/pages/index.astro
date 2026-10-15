@@ -1,22 +1,18 @@
 ---
 import Base from '../layouts/Base.astro';
 
+import ToolCard from '../components/ToolCard.astro';
 import { TOOLS } from '../data/tools';
 ---
 
 <Base title="집·대출·차, 큰돈 드는 계산을 정확하게" description="대출 상환, 전세대출 이자, 중개보수, 전월세 전환, 자동차 할부까지. 공인중개사가 계산 방법까지 풀어 설명하는 계산기.">
-	<h1>집·대출·차,<br />큰돈 드는 계산을 정확하게</h1>
+	<section class="hero">
+		<h1>집·대출·차,<br />큰돈 드는 계산을 정확하게</h1>
 	<p class="lead">결과만 보여주지 않고, 어떻게 계산했는지와 주의할 점까지 함께 설명합니다. 공인중개사가 만든 계산기입니다.</p>
+	</section>
 
 	<div class="tools" id="tools">
-		{
-			TOOLS.map((tool) => (
-				<a class="tool" href={tool.href}>
-					<strong>{tool.name}</strong>
-					<span>{tool.desc}</span>
-				</a>
-			))
-		}
+		{TOOLS.map((tool) => <ToolCard tool={tool} />)}
 	</div>
 
 	<section class="explain">
