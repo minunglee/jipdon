@@ -1,0 +1,187 @@
+---
+import Base from '../../layouts/Base.astro';
+import Related from '../../components/Related.astro';
+import { HOUSE_TABLES } from '../../lib/brokerage';
+
+const percent = (rate: number) => `${(rate * 100).toFixed(1)}%`;
+const capText = (cap: number | null) => (cap === null ? '-' : `${(cap / 10_000).toLocaleString('ko-KR')}만 원`);
+---
+
+<Base
+	title="중개보수(복비) 계산기 — 매매·전세·월세 상한 요율"
+	description="2021년 개정된 법정 상한 요율과 한도액으로 아파트·주택·오피스텔의 매매, 전세, 월세 중개보수(복비)를 계산합니다. 월세 거래금액 환산과 부가세까지 반영."
+>
+	<h1>중개보수(복비) 계산기</h1>
+	<p class="lead">거래 금액을 넣으면 법으로 정한 <strong>최대 중개보수</strong>를 계산합니다. 월세는 거래금액 환산까지 자동으로 합니다.</p>
+
+	<form id="calc-form" class="card form" novalidate>
+		<fieldset class="field" style="border: 0; padding: 0; margin: 0">
+			<legend style="font-weight: 600; margin-bottom: 6px">거래 종류</legend>
+			<div class="segmented two">
+				<input type="radio" id="d-sale" name="deal" value="sale" checked />
+				<label for="d-sale">매매·교환</label>
+				<input type="radio" id="d-lease" name="deal" value="lease" />
+				<label for="d-lease">전세·월세</label>
+			</div>
+		</fieldset>
+
+		<div class="field">
+			<label for="property">대상</label>
+			<select id="property" name="property">
+				<option value="house" selected>주택 (아파트·빌라·단독 등)</option>
+				<option value="officetel">주거용 오피스텔 (전용 85㎡ 이하 등)</option>
+				<option value="other">그 외 (상가·토지·비주거 오피스텔 등)</option>
+			</select>
+		</div>
+
+		<div class="field" data-for="sale">
+			<label for="price">매매 금액</label>
+			<div class="input-row">
+				<input id="price" name="price" inputmode="numeric" autocomplete="off" value="500,000,000" data-money data-hint="price-hint" />
+				<span class="unit">원</span>
+			</div>
+			<p class="hint" id="price-hint"></p>
+		</div>
+
+		<div class="field" data-for="lease" hidden>
+			<label for="deposit">보증금</label>
+			<div class="input-row">
+				<input id="deposit" name="deposit" inputmode="numeric" autocomplete="off" value="300,000,000" data-money data-hint="deposit-hint" />
+				<span class="unit">원</span>
+			</div>
+			<p class="hint" id="deposit-hint"></p>
+		</div>
+
+		<div class="field" data-for="lease" hidden>
+			<label for="rent">월세 (전세면 0)</label>
+			<div class="input-row">
+				<input id="rent" name="rent" inputmode="numeric" autocomplete="off" value="0" data-money data-hint="rent-hint" />
+				<span class="unit">원</span>
+			</div>
+			<p class="hint" id="rent-hint"></p>
+		</div>
+
+		<label class="check field">
+			<input type="checkbox" name="vat" />
+			부가가치세 10% 포함 (중개사무소가 일반과세자인 경우)
+		</label>
+
+		<p id="form-error" class="error" role="alert" hidden></p>
+	</form>
+
+	<section id="result" aria-live="polite">
+		<div class="result-box">
+			<dl>
+				<dt>거래금액</dt>
+				<dd id="amount">-</dd>
+				<dt>적용 구간</dt>
+				<dd id="bracket">-</dd>
+				<dt>상한 요율</dt>
+				<dd id="rate">-</dd>
+				<dt>한도액</dt>
+				<dd id="cap">-</dd>
+				<dt>중개보수</dt>
+				<dd id="fee">-</dd>
+				<dt id="vat-label">부가세</dt>
+				<dd id="vat">-</dd>
+				<dt class="total">최대 중개보수</dt>
+				<dd class="total" id="total">-</dd>
+			</dl>
+			<p class="muted" id="result-note" style="margin: 12px 0 0"></p>
+		</div>
+	</section>
+
+	<section class="explain">
+		<h2>주택 중개보수 상한 요율표</h2>
+		<p>공인중개사법 시행규칙(2021년 10월 19일 시행)과 각 시·도 조례가 정한 기준입니다.</p>
+
+		<h3>매매·교환</h3>
+		<div class="card table-wrap">
+			<table>
+				<thead><tr><th>거래금액</th><th>상한 요율</th><th>한도액</th></tr></thead>
+				<tbody>
+					{HOUSE_TABLES.sale.map((b) => <tr><td>{b.label}</td><td>{percent(b.rate)}</td><td>{capText(b.cap)}</td></tr>)}
+				</tbody>
+			</table>
+		</div>
+
+		<h3>임대차 (전세·월세)</h3>
+		<div class="card table-wrap">
+			<table>
+				<thead><tr><th>거래금액</th><th>상한 요율</th><th>한도액</th></tr></thead>
+				<tbody>
+					{HOUSE_TABLES.lease.map((b) => <tr><td>{b.label}</td><td>{percent(b.rate)}</td><td>{capText(b.cap)}</td></tr>)}
+				</tbody>
+			</table>
+		</div>
+
+		<h2>이렇게 계산했어요</h2>
+		<p class="formula">중개보수 = 거래금액 × 상한 요율 (한도액이 있으면 그 금액을 넘지 않음)<br />월세 거래금액 = 보증금 + 월세 × 100<br />(이 값이 5천만 원 미만이면 보증금 + 월세 × 70)</p>
+		<ul>
+			<li>원 미만은 버립니다.</li>
+			<li><strong>주거용 오피스텔</strong>은 전용면적 85㎡ 이하이고 전용 부엌·수세식 화장실·목욕시설을 갖춘 경우 매매 0.5%, 임대차 0.4%가 상한입니다. 요건을 갖추지 못하면 주택 외로 봅니다.</li>
+			<li><strong>주택 외</strong>(상가·토지·건물 등)는 거래금액의 0.9% 이내에서 중개사와 협의해 정합니다.</li>
+		</ul>
+
+		<h2>알아두면 좋은 점</h2>
+		<ul>
+			<li>요율은 <strong>상한</strong>입니다. 실제 중개보수는 이 범위 안에서 계약 전에 중개사와 협의해 정하는 것이 좋습니다.</li>
+			<li>중개보수는 거래 당사자 <strong>양쪽이 각각</strong> 냅니다. 매도인과 매수인, 임대인과 임차인이 각자 자기 쪽 중개사무소에 냅니다.</li>
+			<li>부가가치세는 중개사무소가 일반과세자면 10%를 더 냅니다. 간이과세자는 기준이 달라 사무소에 확인하세요.</li>
+			<li>중개보수 영수증(현금영수증)은 연말정산이나 양도소득세 계산 때 필요할 수 있으니 꼭 받아 두세요.</li>
+		</ul>
+
+		<p class="notice">계산 결과는 법정 상한 기준의 참고용입니다. 시·도 조례나 거래 조건에 따라 다를 수 있으니 중개사무소에 확인하세요.</p>
+	</section>
+
+	<Related />
+</Base>
+
+<script>
+	import { calculate, validate, type BrokerageInput, type DealType, type PropertyType } from '../../lib/brokerage';
+	import { formatKoreanUnit, formatWon } from '../../lib/format';
+	import { bindMoneyInputs, parseNumber, setText, showError } from '../../lib/form';
+
+	const form = document.getElementById('calc-form') as HTMLFormElement;
+	const errorBox = document.getElementById('form-error')!;
+	const resultBox = document.getElementById('result')!;
+
+	function readInput(): BrokerageInput {
+		const data = new FormData(form);
+		return {
+			deal: data.get('deal') as DealType,
+			property: data.get('property') as PropertyType,
+			price: parseNumber(data.get('price')),
+			deposit: parseNumber(data.get('deposit')) || 0,
+			monthlyRent: parseNumber(data.get('rent')) || 0,
+			includeVat: data.get('vat') === 'on',
+		};
+	}
+
+	function render() {
+		const input = readInput();
+		// 거래 종류에 맞는 입력칸만 보여준다
+		for (const el of form.querySelectorAll<HTMLElement>('[data-for]')) el.hidden = el.dataset.for !== input.deal;
+		if (!showError(validate(input), errorBox, resultBox)) return;
+
+		const r = calculate(input);
+		setText('amount', formatKoreanUnit(r.amount));
+		setText('bracket', r.bracketLabel);
+		setText('rate', `${(r.rate * 100).toFixed(1)}%`);
+		setText('cap', r.cap === null ? '없음' : formatWon(r.cap));
+		setText('fee', formatWon(r.fee));
+		setText('vat', input.includeVat ? formatWon(r.vat) : '미포함');
+		setText('total', formatWon(r.total));
+
+		const notes: string[] = [];
+		if (r.amountNote) notes.push(`월세 거래금액은 ${r.amountNote}로 계산했습니다.`);
+		if (r.capped) notes.push(`요율로는 ${formatWon(Math.floor(r.amount * r.rate))}이지만 한도액을 넘을 수 없습니다.`);
+		if (input.property === 'other') notes.push('주택 외 중개대상물은 0.9% 이내에서 협의해 정합니다.');
+		setText('result-note', notes.join(' '));
+	}
+
+	bindMoneyInputs();
+	form.addEventListener('input', render);
+	form.addEventListener('submit', (event) => event.preventDefault());
+	render();
+</script>

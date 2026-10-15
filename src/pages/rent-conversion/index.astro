@@ -1,0 +1,199 @@
+---
+import Base from '../../layouts/Base.astro';
+import Related from '../../components/Related.astro';
+import { BASE_RATE } from '../../data/rates';
+import { legalCapRate } from '../../lib/conversion';
+
+const cap = legalCapRate(BASE_RATE.percent);
+const checked = BASE_RATE.checkedAt.replace(/-/g, '.');
+---
+
+<Base
+	title="전월세 전환 계산기 (법정 상한 전환율)"
+	description="전세 보증금을 월세로, 월세를 보증금으로 바꿀 때 금액을 계산합니다. 주택임대차보호법의 전환율 상한(기준금리 + 2%)과 지금 조건의 실제 전환율도 확인할 수 있습니다."
+>
+	<h1>전월세 전환 계산기</h1>
+	<p class="lead">보증금을 줄이면 월세가 얼마 늘어야 하는지, 월세를 줄이려면 보증금을 얼마 올려야 하는지 계산합니다.</p>
+
+	<form id="calc-form" class="card form" novalidate data-cap={cap}>
+		<fieldset class="field" style="border: 0; padding: 0; margin: 0">
+			<legend style="font-weight: 600; margin-bottom: 6px">무엇을 바꾸나요?</legend>
+			<div class="segmented two">
+				<input type="radio" id="m-to-rent" name="mode" value="to-rent" checked />
+				<label for="m-to-rent">보증금 → 월세</label>
+				<input type="radio" id="m-to-deposit" name="mode" value="to-deposit" />
+				<label for="m-to-deposit">월세 → 보증금</label>
+			</div>
+		</fieldset>
+
+		<div class="field" data-for="to-rent">
+			<label for="deposit">월세로 바꿀 보증금</label>
+			<div class="input-row">
+				<input id="deposit" name="deposit" inputmode="numeric" autocomplete="off" value="100,000,000" data-money data-hint="deposit-hint" />
+				<span class="unit">원</span>
+			</div>
+			<p class="hint" id="deposit-hint"></p>
+		</div>
+
+		<div class="field" data-for="to-deposit" hidden>
+			<label for="rent">줄이려는 월세</label>
+			<div class="input-row">
+				<input id="rent" name="rent" inputmode="numeric" autocomplete="off" value="500,000" data-money data-hint="rent-hint" />
+				<span class="unit">원</span>
+			</div>
+			<p class="hint" id="rent-hint"></p>
+		</div>
+
+		<div class="field">
+			<label for="rate">전환율 (연)</label>
+			<div class="input-row">
+				<input id="rate" name="rate" inputmode="decimal" autocomplete="off" value={String(cap)} />
+				<span class="unit">%</span>
+			</div>
+			<p class="hint">기본값 {cap}%는 법정 상한입니다 (기준금리 {BASE_RATE.percent}% + 2%, {checked} 확인).</p>
+		</div>
+
+		<p id="form-error" class="error" role="alert" hidden></p>
+	</form>
+
+	<section id="result" aria-live="polite">
+		<dl class="summary">
+			<div class="primary">
+				<dt id="result-label">늘어나는 월세</dt>
+				<dd id="result-value">-</dd>
+				<small id="result-note"></small>
+			</div>
+			<div>
+				<dt>법정 상한 전환율</dt>
+				<dd>{cap}%</dd>
+				<small id="cap-note"></small>
+			</div>
+		</dl>
+	</section>
+
+	<h2>지금 조건의 전환율 확인하기</h2>
+	<p>집주인이 제시한 두 조건(예: 보증금 3억 전세 vs 보증금 2억 + 월세 45만 원)을 넣으면 실제 전환율을 계산합니다.</p>
+	<form id="check-form" class="card form" novalidate>
+		<div class="field">
+			<label for="dep-a">조건 A 보증금</label>
+			<div class="input-row">
+				<input id="dep-a" name="depA" inputmode="numeric" autocomplete="off" value="300,000,000" data-money data-hint="dep-a-hint" />
+				<span class="unit">원</span>
+			</div>
+			<p class="hint" id="dep-a-hint"></p>
+		</div>
+		<div class="field">
+			<label for="rent-a">조건 A 월세</label>
+			<div class="input-row">
+				<input id="rent-a" name="rentA" inputmode="numeric" autocomplete="off" value="0" data-money />
+				<span class="unit">원</span>
+			</div>
+		</div>
+		<div class="field">
+			<label for="dep-b">조건 B 보증금</label>
+			<div class="input-row">
+				<input id="dep-b" name="depB" inputmode="numeric" autocomplete="off" value="200,000,000" data-money data-hint="dep-b-hint" />
+				<span class="unit">원</span>
+			</div>
+			<p class="hint" id="dep-b-hint"></p>
+		</div>
+		<div class="field">
+			<label for="rent-b">조건 B 월세</label>
+			<div class="input-row">
+				<input id="rent-b" name="rentB" inputmode="numeric" autocomplete="off" value="450,000" data-money />
+				<span class="unit">원</span>
+			</div>
+		</div>
+		<p id="check-result" class="result-box" style="margin: 0" aria-live="polite"></p>
+	</form>
+
+	<section class="explain">
+		<h2>이렇게 계산했어요</h2>
+		<p class="formula">월세 = 월세로 바꿀 보증금 × 전환율 ÷ 12<br />보증금 = 줄일 월세 × 12 ÷ 전환율<br />실제 전환율 = (월세 차이 × 12) ÷ 보증금 차이</p>
+		<p>금액은 원 단위로 반올림합니다.</p>
+
+		<h2>법정 상한 전환율이란?</h2>
+		<p>주택임대차보호법은 <strong>계약 기간 중이거나 계약을 갱신하면서</strong> 보증금의 일부나 전부를 월세로 바꿀 때, 전환율이 아래 둘 중 <strong>낮은 쪽</strong>을 넘지 못하게 합니다.</p>
+		<ul>
+			<li>연 10%</li>
+			<li>한국은행 기준금리 + 연 2%</li>
+		</ul>
+		<p>{checked} 기준 한국은행 기준금리는 연 {BASE_RATE.percent}%여서 상한은 연 {cap}%입니다. 기준금리가 바뀌면 상한도 함께 바뀝니다.</p>
+
+		<h2>알아두면 좋은 점</h2>
+		<ul>
+			<li><strong>새로 계약할 때</strong>는 이 상한이 적용되지 않고 시장 시세에 따라 정해집니다. 그래도 전환율을 계산해 보면 조건이 적정한지 비교할 수 있습니다.</li>
+			<li>월세를 보증금으로 바꾸는 경우(월세 → 전세)에는 법정 상한이 없습니다.</li>
+			<li>보증금을 올릴 때는 전세보증금 반환 위험도 함께 커지니 집의 시세와 선순위 대출(근저당)을 꼭 확인하세요.</li>
+		</ul>
+
+		<p class="notice">계산 결과는 참고용입니다. 실제 계약 조건은 임대인과 협의하고, 분쟁이 생기면 주택임대차분쟁조정위원회를 이용할 수 있습니다.</p>
+	</section>
+
+	<Related />
+</Base>
+
+<script>
+	import { depositFor, impliedRate, monthlyRentFor } from '../../lib/conversion';
+	import { formatKoreanUnit, formatWon } from '../../lib/format';
+	import { bindMoneyInputs, parseNumber, setText, showError } from '../../lib/form';
+
+	const form = document.getElementById('calc-form') as HTMLFormElement;
+	const checkForm = document.getElementById('check-form') as HTMLFormElement;
+	const errorBox = document.getElementById('form-error')!;
+	const resultBox = document.getElementById('result')!;
+	/** 법정 상한 전환율 (빌드 때 기준금리로 계산해 넣어 둔 값) */
+	const cap = Number(form.dataset.cap);
+
+	function render() {
+		const data = new FormData(form);
+		const mode = data.get('mode');
+		const rate = parseNumber(data.get('rate'));
+		for (const el of form.querySelectorAll<HTMLElement>('[data-for]')) el.hidden = el.dataset.for !== mode;
+
+		const amount = parseNumber(data.get(mode === 'to-rent' ? 'deposit' : 'rent'));
+		let error: string | null = null;
+		if (!(amount > 0)) error = mode === 'to-rent' ? '월세로 바꿀 보증금을 입력해주세요.' : '줄이려는 월세를 입력해주세요.';
+		else if (!(rate > 0 && rate <= 30)) error = '전환율은 0보다 크고 30% 이하로 입력해주세요.';
+		if (!showError(error, errorBox, resultBox)) return;
+
+		if (mode === 'to-rent') {
+			setText('result-label', '늘어나는 월세');
+			setText('result-value', formatWon(monthlyRentFor(amount, rate)));
+			setText('result-note', `보증금 ${formatKoreanUnit(amount)}을 연 ${rate}%로 전환`);
+			setText('cap-note', rate > cap ? '입력한 전환율이 상한을 넘습니다 (계약 중·갱신 시 적용).' : '계약 중·갱신 시 적용');
+		} else {
+			setText('result-label', '올려야 할 보증금');
+			setText('result-value', formatKoreanUnit(depositFor(amount, rate)));
+			setText('result-note', `월세 ${formatWon(amount)}을 연 ${rate}%로 전환`);
+			setText('cap-note', '월세 → 보증금 전환에는 상한이 없습니다.');
+		}
+	}
+
+	function renderCheck() {
+		const data = new FormData(checkForm);
+		const depA = parseNumber(data.get('depA')) || 0;
+		const depB = parseNumber(data.get('depB')) || 0;
+		const rentA = parseNumber(data.get('rentA')) || 0;
+		const rentB = parseNumber(data.get('rentB')) || 0;
+		const out = document.getElementById('check-result')!;
+		const depositDiff = Math.abs(depA - depB);
+		const rentDiff = depA > depB ? rentB - rentA : rentA - rentB;
+		if (depositDiff === 0 || rentDiff <= 0) {
+			out.textContent = '보증금이 더 많은 조건의 월세가 더 적어야 비교할 수 있습니다.';
+			return;
+		}
+		const rate = impliedRate(depositDiff, rentDiff);
+		out.textContent =
+			`보증금 ${formatKoreanUnit(depositDiff)} 차이에 월세 ${formatWon(rentDiff)} 차이 → 실제 전환율 연 ${rate}%. ` +
+			(rate > cap ? `법정 상한 ${cap}%보다 높습니다 (계약 중·갱신이라면 상한 초과).` : `법정 상한 ${cap}% 이내입니다.`);
+	}
+
+	bindMoneyInputs();
+	form.addEventListener('input', render);
+	form.addEventListener('submit', (event) => event.preventDefault());
+	checkForm.addEventListener('input', renderCheck);
+	checkForm.addEventListener('submit', (event) => event.preventDefault());
+	render();
+	renderCheck();
+</script>

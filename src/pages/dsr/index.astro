@@ -1,0 +1,209 @@
+---
+import Base from '../../layouts/Base.astro';
+import Related from '../../components/Related.astro';
+---
+
+<Base
+	title="DSR 계산기 (스트레스 DSR·최대 대출 가능액)"
+	description="연 소득과 새 주택담보대출, 기존 대출을 넣으면 DSR(총부채원리금상환비율)을 계산하고 규제 한도 안에서 받을 수 있는 최대 대출액을 알려줍니다. 스트레스 가산금리 반영."
+>
+	<h1>DSR 계산기</h1>
+	<p class="lead">내 소득으로 대출을 얼마까지 받을 수 있는지, 새 대출을 받으면 DSR이 몇 %가 되는지 계산합니다.</p>
+
+	<form id="calc-form" class="card form" novalidate>
+		<div class="field">
+			<label for="income">연 소득 (세전)</label>
+			<div class="input-row">
+				<input id="income" name="income" inputmode="numeric" autocomplete="off" value="60,000,000" data-money data-hint="income-hint" />
+				<span class="unit">원</span>
+			</div>
+			<p class="hint" id="income-hint"></p>
+		</div>
+
+		<h3 style="margin: 4px 0 -8px">새로 받을 주택담보대출</h3>
+
+		<div class="field">
+			<label for="loan">대출금</label>
+			<div class="input-row">
+				<input id="loan" name="loan" inputmode="numeric" autocomplete="off" value="300,000,000" data-money data-hint="loan-hint" />
+				<span class="unit">원</span>
+			</div>
+			<p class="hint" id="loan-hint"></p>
+		</div>
+
+		<div class="field">
+			<label for="rate">연 금리</label>
+			<div class="input-row">
+				<input id="rate" name="rate" inputmode="decimal" autocomplete="off" value="4" />
+				<span class="unit">%</span>
+			</div>
+		</div>
+
+		<div class="field">
+			<label for="years">대출 기간</label>
+			<div class="input-row">
+				<input id="years" name="years" inputmode="numeric" autocomplete="off" value="30" />
+				<span class="unit">년</span>
+			</div>
+		</div>
+
+		<fieldset class="field" style="border: 0; padding: 0; margin: 0">
+			<legend style="font-weight: 600; margin-bottom: 6px">상환 방식</legend>
+			<div class="segmented two">
+				<input type="radio" id="m-equal-payment" name="method" value="equal-payment" checked />
+				<label for="m-equal-payment">원리금균등</label>
+				<input type="radio" id="m-equal-principal" name="method" value="equal-principal" />
+				<label for="m-equal-principal">원금균등</label>
+			</div>
+		</fieldset>
+
+		<div class="field">
+			<label for="stress">스트레스 가산금리 (선택)</label>
+			<div class="input-row">
+				<input id="stress" name="stress" inputmode="decimal" autocomplete="off" value="0" />
+				<span class="unit">%p</span>
+			</div>
+			<p class="hint">스트레스 DSR은 한도를 계산할 때만 금리를 더 높게 잡습니다. 지역·금리 유형·시기마다 다르니 은행 안내 값을 넣으세요.</p>
+		</div>
+
+		<h3 style="margin: 4px 0 -8px">이미 있는 대출</h3>
+
+		<div class="field">
+			<label for="other">기존 대출 연간 원리금 (전세대출 제외)</label>
+			<div class="input-row">
+				<input id="other" name="other" inputmode="numeric" autocomplete="off" value="0" data-money data-hint="other-hint" />
+				<span class="unit">원</span>
+			</div>
+			<p class="hint" id="other-hint"></p>
+		</div>
+
+		<div class="field">
+			<label for="jeonse">전세대출 잔액</label>
+			<div class="input-row">
+				<input id="jeonse" name="jeonse" inputmode="numeric" autocomplete="off" value="0" data-money data-hint="jeonse-hint" />
+				<span class="unit">원</span>
+			</div>
+			<p class="hint" id="jeonse-hint"></p>
+		</div>
+
+		<div class="field">
+			<label for="jeonse-rate">전세대출 금리</label>
+			<div class="input-row">
+				<input id="jeonse-rate" name="jeonseRate" inputmode="decimal" autocomplete="off" value="4" />
+				<span class="unit">%</span>
+			</div>
+		</div>
+
+		<fieldset class="field" style="border: 0; padding: 0; margin: 0">
+			<legend style="font-weight: 600; margin-bottom: 6px">DSR 한도</legend>
+			<div class="segmented two">
+				<input type="radio" id="l-bank" name="limit" value="40" checked />
+				<label for="l-bank">은행 40%</label>
+				<input type="radio" id="l-nonbank" name="limit" value="50" />
+				<label for="l-nonbank">2금융권 50%</label>
+			</div>
+		</fieldset>
+
+		<p id="form-error" class="error" role="alert" hidden></p>
+	</form>
+
+	<section id="result" aria-live="polite">
+		<dl class="summary">
+			<div class="primary">
+				<dt>DSR</dt>
+				<dd id="dsr">-</dd>
+				<small><span id="dsr-badge" class="badge"></span></small>
+			</div>
+			<div>
+				<dt>연간 원리금 합계</dt>
+				<dd id="annual">-</dd>
+				<small id="annual-note"></small>
+			</div>
+			<div>
+				<dt>최대 대출 가능액</dt>
+				<dd id="max-loan">-</dd>
+				<small id="max-note"></small>
+			</div>
+		</dl>
+	</section>
+
+	<section class="explain">
+		<h2>DSR이란?</h2>
+		<p>DSR(총부채원리금상환비율)은 <strong>1년 동안 갚아야 하는 모든 대출의 원금과 이자</strong>가 연 소득에서 차지하는 비율입니다. 총대출액이 1억 원을 넘는 차주는 은행에서 40%, 2금융권에서 50%를 넘을 수 없습니다.</p>
+
+		<h2>이렇게 계산했어요</h2>
+		<p class="formula">DSR = (새 대출 연간 원리금 + 기존 대출 연간 원리금 + 전세대출 연 이자) ÷ 연 소득 × 100<br />새 대출 연간 원리금 = 총 원리금 ÷ 대출 연수 (스트레스 가산금리를 더한 금리로 계산)</p>
+		<ul>
+			<li><strong>전세자금대출</strong>은 원금은 빼고 이자만 DSR에 넣습니다.</li>
+			<li><strong>최대 대출 가능액</strong>은 기존 대출을 그대로 둔 채 한도까지 남은 여유로 받을 수 있는 새 주택담보대출 금액입니다 (만 원 단위 내림).</li>
+			<li>기존 대출 연간 원리금은 대출 내역서의 월 상환액 × 12로 넣으면 됩니다. 신용대출·마이너스통장은 은행이 실제 만기 대신 정해진 기간으로 나눠 원금을 잡는 경우가 있어 은행 계산과 다를 수 있습니다.</li>
+		</ul>
+
+		<h2>스트레스 DSR</h2>
+		<p>스트레스 DSR은 앞으로 금리가 오를 가능성을 반영하려고, 한도를 계산할 때 실제 금리에 <strong>가산금리</strong>를 더해 원리금을 크게 잡는 제도입니다. 실제로 내는 이자는 늘지 않지만 받을 수 있는 대출 한도가 줄어듭니다. 가산금리는 시행 단계, 지역(수도권 여부), 금리 유형(변동·혼합·주기형)에 따라 다르므로 대출받을 은행에서 확인한 값을 넣으세요.</p>
+
+		<h2>알아두면 좋은 점</h2>
+		<ul>
+			<li>DSR 외에도 <strong>LTV</strong>(집값 대비 대출 비율)와 금융기관 자체 심사로 한도가 정해집니다. 가장 낮은 금액이 실제 한도입니다.</li>
+			<li>정책 대출(디딤돌 등)이나 일부 대출은 DSR 적용이 다를 수 있습니다.</li>
+			<li>소득은 증빙 소득(근로소득 원천징수영수증 등) 기준이며, 소득 증빙 방식에 따라 인정 소득이 달라질 수 있습니다.</li>
+		</ul>
+
+		<p class="notice">계산 결과는 참고용입니다. 실제 대출 한도는 금융기관 심사로 정해지니 반드시 대출받을 금융기관에 확인하세요.</p>
+	</section>
+
+	<Related />
+</Base>
+
+<script>
+	import { calculate, validate, type DsrInput } from '../../lib/dsr';
+	import { formatKoreanUnit, formatWon } from '../../lib/format';
+	import { bindMoneyInputs, parseNumber, setText, showError } from '../../lib/form';
+
+	const form = document.getElementById('calc-form') as HTMLFormElement;
+	const errorBox = document.getElementById('form-error')!;
+	const resultBox = document.getElementById('result')!;
+
+	function readInput(): DsrInput {
+		const data = new FormData(form);
+		return {
+			annualIncome: parseNumber(data.get('income')),
+			newLoan: parseNumber(data.get('loan')) || 0,
+			annualRatePercent: parseNumber(data.get('rate')),
+			months: Math.round(parseNumber(data.get('years')) * 12),
+			method: data.get('method') as DsrInput['method'],
+			stressRatePercent: parseNumber(data.get('stress')) || 0,
+			otherAnnualRepayment: parseNumber(data.get('other')) || 0,
+			jeonseLoanBalance: parseNumber(data.get('jeonse')) || 0,
+			jeonseRatePercent: parseNumber(data.get('jeonseRate')) || 0,
+			limitPercent: Number(data.get('limit')),
+		};
+	}
+
+	function render() {
+		const input = readInput();
+		if (!showError(validate(input), errorBox, resultBox)) return;
+		const r = calculate(input);
+		setText('dsr', `${r.dsrPercent.toFixed(1)}%`);
+		const badge = document.getElementById('dsr-badge')!;
+		badge.textContent = r.withinLimit ? `한도 ${input.limitPercent}% 이내` : `한도 ${input.limitPercent}% 초과`;
+		badge.className = `badge ${r.withinLimit ? 'ok' : 'over'}`;
+		setText('annual', formatWon(r.totalAnnual));
+		setText(
+			'annual-note',
+			`새 대출 ${formatWon(r.newLoanAnnual)}` + (r.jeonseAnnualInterest > 0 ? ` · 전세대출 이자 ${formatWon(r.jeonseAnnualInterest)}` : ''),
+		);
+		setText('max-loan', r.maxNewLoan > 0 ? formatKoreanUnit(r.maxNewLoan) : '0원');
+		setText(
+			'max-note',
+			r.maxNewLoan > 0
+				? `금리 ${input.annualRatePercent + input.stressRatePercent}% · ${input.months / 12}년 기준`
+				: '기존 대출만으로 한도에 닿았습니다.',
+		);
+	}
+
+	bindMoneyInputs();
+	form.addEventListener('input', render);
+	form.addEventListener('submit', (event) => event.preventDefault());
+	render();
+</script>
