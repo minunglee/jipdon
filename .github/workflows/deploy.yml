@@ -1,0 +1,78 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: 계산 로직 테스트
+        run: npm test
+      - name: 타입 검사
+        run: npx astro check
+      - run: npm run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist
+
+  deploy:
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    concurrency: production
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+
+      - name: SSH 접속 준비
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SERVER_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          echo "${{ secrets.SERVER_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+
+      - name: 서버 배포
+        env:
+          TARGET: ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}
+          RELEASE: ${{ github.sha }}
+        run: |
+          SSH="ssh -i $HOME/.ssh/deploy_key"
+          # 새 버전은 별도 폴더에 올린 뒤 링크만 바꿔, 올리는 도중에 반쯤 바뀐 사이트가 보이지 않게 한다
+          $SSH $TARGET "mkdir -p sites/jipdon/releases/$RELEASE app/nginx"
+          rsync -az --delete -e "$SSH" dist/ $TARGET:sites/jipdon/releases/$RELEASE/
+          scp -i ~/.ssh/deploy_key deploy/jipdon.conf $TARGET:app/nginx/
+          $SSH $TARGET bash -s <<EOF
+            set -e
+            cd ~/sites/jipdon
+            # 상대 경로 링크여야 Nginx 컨테이너 안(/var/www/sites)에서도 같은 곳을 가리킨다
+            ln -sfn releases/$RELEASE current.tmp
+            mv -Tf current.tmp current
+            # 되돌릴 수 있게 최근 5개 버전만 남긴다
+            ls -1t releases | tail -n +6 | xargs -r -I{} rm -rf releases/{}
+            docker exec app-nginx-1 nginx -t
+            docker exec app-nginx-1 nginx -s reload
+          EOF
+
+      - name: 헬스 체크
+        run: |
+          for i in $(seq 1 12); do
+            if curl -fsS https://jipdon.com/loan/ | grep -q "대출 상환 계산기"; then
+              echo "배포 성공"; exit 0
+            fi
+            sleep 5
+          done
+          echo "헬스 체크 실패"; exit 1

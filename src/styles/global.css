@@ -1,0 +1,383 @@
+:root {
+	--bg: #f8faf9;
+	--surface: #ffffff;
+	--text: #18181b;
+	--text-soft: #3f3f46;
+	--muted: #71717a;
+	--border: #e4e4e7;
+	--brand: #0f766e;
+	--brand-soft: #ccfbf1;
+	--accent: #b45309;
+	--error: #b91c1c;
+	--radius: 12px;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root {
+		--bg: #111413;
+		--surface: #1b1f1e;
+		--text: #f4f4f5;
+		--text-soft: #d4d4d8;
+		--muted: #a1a1aa;
+		--border: #2f3533;
+		--brand: #2dd4bf;
+		--brand-soft: #134e4a;
+		--accent: #fbbf24;
+		--error: #fca5a5;
+	}
+}
+
+* {
+	box-sizing: border-box;
+}
+
+body {
+	margin: 0;
+	background: var(--bg);
+	color: var(--text);
+	font-family: Pretendard, system-ui, -apple-system, 'Malgun Gothic', sans-serif;
+	line-height: 1.7;
+	word-break: keep-all;
+	overflow-wrap: break-word;
+}
+
+a {
+	color: var(--brand);
+}
+
+.container {
+	max-width: 760px;
+	margin: 0 auto;
+	padding: 0 16px;
+}
+
+/* 머리글·바닥글 */
+.site-header {
+	background: var(--surface);
+	border-bottom: 1px solid var(--border);
+}
+
+.header-inner {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	min-height: 60px;
+}
+
+.logo {
+	color: var(--text);
+	font-size: 1.25rem;
+	font-weight: 800;
+	text-decoration: none;
+}
+
+.logo span {
+	color: var(--brand);
+}
+
+.site-header nav {
+	display: flex;
+	gap: 16px;
+	font-size: 0.95rem;
+}
+
+.site-header nav a {
+	color: var(--text-soft);
+	text-decoration: none;
+}
+
+.site-footer {
+	margin-top: 64px;
+	padding: 32px 0;
+	border-top: 1px solid var(--border);
+	color: var(--muted);
+	font-size: 0.85rem;
+}
+
+.site-footer p {
+	margin: 4px 0;
+}
+
+/* 공통 요소 */
+h1 {
+	margin: 40px 0 8px;
+	font-size: 1.9rem;
+	line-height: 1.35;
+	letter-spacing: -0.02em;
+}
+
+.lead {
+	margin: 0 0 32px;
+	color: var(--text-soft);
+	font-size: 1.05rem;
+}
+
+h2 {
+	margin: 48px 0 16px;
+	font-size: 1.3rem;
+}
+
+h3 {
+	margin: 24px 0 8px;
+	font-size: 1.05rem;
+}
+
+.card {
+	padding: 24px;
+	background: var(--surface);
+	border: 1px solid var(--border);
+	border-radius: var(--radius);
+}
+
+.muted {
+	color: var(--muted);
+}
+
+/* 입력 폼 */
+.form {
+	display: grid;
+	gap: 20px;
+}
+
+.field label {
+	display: block;
+	margin-bottom: 6px;
+	font-weight: 600;
+}
+
+.field .hint {
+	margin-top: 4px;
+	color: var(--muted);
+	font-size: 0.85rem;
+	min-height: 1.2em;
+}
+
+.input-row {
+	display: flex;
+	gap: 8px;
+}
+
+input,
+select {
+	width: 100%;
+	min-width: 0;
+	padding: 12px 14px;
+	background: var(--bg);
+	color: var(--text);
+	border: 1px solid var(--border);
+	border-radius: 8px;
+	font: inherit;
+	font-variant-numeric: tabular-nums;
+}
+
+input:focus,
+select:focus {
+	outline: 2px solid var(--brand);
+	outline-offset: 1px;
+}
+
+.unit {
+	flex-shrink: 0;
+	align-self: center;
+	color: var(--muted);
+}
+
+.segmented {
+	position: relative;
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 6px;
+}
+
+/* 실제 라디오는 숨기고 라벨을 버튼처럼 쓴다 (입력칸 공통 스타일의 너비 100%를 덮어써 화면 밖으로 넘치지 않게) */
+.segmented input {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	opacity: 0;
+	pointer-events: none;
+}
+
+.segmented label {
+	margin: 0;
+	padding: 10px 8px;
+	border: 1px solid var(--border);
+	border-radius: 8px;
+	font-weight: 500;
+	text-align: center;
+	cursor: pointer;
+}
+
+.segmented input:checked + label {
+	background: var(--brand-soft);
+	border-color: var(--brand);
+	color: var(--text);
+	font-weight: 700;
+}
+
+.segmented input:focus-visible + label {
+	outline: 2px solid var(--brand);
+}
+
+.error {
+	color: var(--error);
+}
+
+/* 결과 */
+.summary {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 12px;
+	margin-top: 24px;
+}
+
+.summary div {
+	padding: 16px;
+	background: var(--surface);
+	border: 1px solid var(--border);
+	border-radius: var(--radius);
+}
+
+.summary dt {
+	color: var(--muted);
+	font-size: 0.85rem;
+}
+
+.summary dd {
+	margin: 4px 0 0;
+	font-size: 1.25rem;
+	font-weight: 800;
+	font-variant-numeric: tabular-nums;
+}
+
+.summary .primary {
+	border-color: var(--brand);
+	background: var(--brand-soft);
+}
+
+.summary small {
+	display: block;
+	color: var(--muted);
+	font-size: 0.8rem;
+	font-weight: 400;
+}
+
+table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 0.92rem;
+	font-variant-numeric: tabular-nums;
+}
+
+th,
+td {
+	padding: 10px 8px;
+	border-bottom: 1px solid var(--border);
+	text-align: right;
+	white-space: nowrap;
+}
+
+th:first-child,
+td:first-child {
+	text-align: left;
+}
+
+th {
+	color: var(--muted);
+	font-weight: 600;
+}
+
+.table-wrap {
+	overflow-x: auto;
+}
+
+tr.best td {
+	color: var(--brand);
+	font-weight: 700;
+}
+
+details > summary {
+	cursor: pointer;
+	font-weight: 600;
+}
+
+/* 설명 영역 */
+.explain p,
+.explain li {
+	color: var(--text-soft);
+}
+
+.formula {
+	padding: 14px 16px;
+	background: var(--surface);
+	border-left: 3px solid var(--brand);
+	border-radius: 0 8px 8px 0;
+	font-size: 0.95rem;
+}
+
+.notice {
+	margin-top: 32px;
+	padding: 14px 16px;
+	background: var(--surface);
+	border: 1px dashed var(--border);
+	border-radius: 8px;
+	color: var(--muted);
+	font-size: 0.88rem;
+}
+
+/* 메인 카드 목록 */
+.tools {
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
+	gap: 12px;
+}
+
+.tool {
+	display: block;
+	padding: 20px;
+	background: var(--surface);
+	color: var(--text);
+	border: 1px solid var(--border);
+	border-radius: var(--radius);
+	text-decoration: none;
+}
+
+a.tool:hover {
+	border-color: var(--brand);
+}
+
+.tool strong {
+	display: block;
+	font-size: 1.05rem;
+}
+
+.tool span {
+	color: var(--muted);
+	font-size: 0.88rem;
+}
+
+.tool.soon {
+	opacity: 0.55;
+}
+
+.tool .tag {
+	display: inline-block;
+	margin-top: 8px;
+	padding: 0 8px;
+	border: 1px solid var(--border);
+	border-radius: 999px;
+	font-size: 0.75rem;
+}
+
+@media (max-width: 560px) {
+	h1 {
+		font-size: 1.6rem;
+	}
+
+	.summary,
+	.tools {
+		grid-template-columns: 1fr;
+	}
+}

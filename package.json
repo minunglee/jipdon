@@ -1,0 +1,21 @@
+{
+  "name": "jipdon",
+  "private": true,
+  "type": "module",
+  "description": "집돈 계산기 - 집·대출·차, 큰돈 드는 계산을 정확하게",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@astrojs/sitemap": "3.7.4",
+    "astro": "7.3.8"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.10",
+    "typescript": "5.9.3",
+    "vitest": "4.1.11"
+  }
+}

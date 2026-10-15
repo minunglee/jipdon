@@ -1,0 +1,216 @@
+---
+import Base from '../../layouts/Base.astro';
+---
+
+<Base
+	title="대출 상환 계산기 (원리금균등·원금균등·만기일시)"
+	description="대출금, 금리, 기간을 넣으면 상환 방식별 월 상환액과 총 이자를 비교하고 월별 상환표를 보여줍니다. 계산식과 반올림 기준까지 설명합니다."
+>
+	<h1>대출 상환 계산기</h1>
+	<p class="lead">대출금·금리·기간을 넣으면 상환 방식별로 매달 갚을 돈과 총 이자를 비교해 드립니다.</p>
+
+	<form id="loan-form" class="card form" novalidate>
+		<div class="field">
+			<label for="principal">대출금</label>
+			<div class="input-row">
+				<input id="principal" name="principal" inputmode="numeric" autocomplete="off" value="100,000,000" />
+				<span class="unit">원</span>
+			</div>
+			<p class="hint" id="principal-hint"></p>
+		</div>
+
+		<div class="field">
+			<label for="rate">연 이자율</label>
+			<div class="input-row">
+				<input id="rate" name="rate" inputmode="decimal" autocomplete="off" value="4.5" />
+				<span class="unit">%</span>
+			</div>
+		</div>
+
+		<div class="field">
+			<label for="term">대출 기간</label>
+			<div class="input-row">
+				<input id="term" name="term" inputmode="numeric" autocomplete="off" value="30" />
+				<select id="term-unit" name="termUnit" aria-label="기간 단위" style="width: auto">
+					<option value="years" selected>년</option>
+					<option value="months">개월</option>
+				</select>
+			</div>
+		</div>
+
+		<fieldset class="field" style="border: 0; padding: 0; margin: 0">
+			<legend style="font-weight: 600; margin-bottom: 6px">상환 방식</legend>
+			<div class="segmented">
+				<input type="radio" id="m-equal-payment" name="method" value="equal-payment" checked />
+				<label for="m-equal-payment">원리금균등</label>
+				<input type="radio" id="m-equal-principal" name="method" value="equal-principal" />
+				<label for="m-equal-principal">원금균등</label>
+				<input type="radio" id="m-bullet" name="method" value="bullet" />
+				<label for="m-bullet">만기일시</label>
+			</div>
+		</fieldset>
+
+		<p id="form-error" class="error" role="alert" hidden></p>
+	</form>
+
+	<section id="result" aria-live="polite">
+		<dl class="summary">
+			<div class="primary">
+				<dt id="first-label">월 상환액</dt>
+				<dd id="first-payment">-</dd>
+				<small id="first-note"></small>
+			</div>
+			<div>
+				<dt>총 이자</dt>
+				<dd id="total-interest">-</dd>
+			</div>
+			<div>
+				<dt>총 상환액</dt>
+				<dd id="total-payment">-</dd>
+			</div>
+		</dl>
+
+		<h2>상환 방식별 비교</h2>
+		<div class="card table-wrap">
+			<table>
+				<thead>
+					<tr><th>상환 방식</th><th>첫 달</th><th>마지막 달</th><th>총 이자</th></tr>
+				</thead>
+				<tbody id="compare-body"></tbody>
+			</table>
+		</div>
+		<p class="muted" id="compare-note"></p>
+
+		<h2>월별 상환표</h2>
+		<div class="card table-wrap">
+			<table>
+				<thead>
+					<tr><th>회차</th><th>상환액</th><th>원금</th><th>이자</th><th>남은 대출금</th></tr>
+				</thead>
+				<tbody id="schedule-body"></tbody>
+			</table>
+			<details id="schedule-more" style="margin-top: 12px">
+				<summary>전체 회차 보기</summary>
+				<table>
+					<tbody id="schedule-rest"></tbody>
+				</table>
+			</details>
+		</div>
+	</section>
+
+	<section class="explain">
+		<h2>상환 방식, 무엇이 다른가요?</h2>
+		<h3>원리금균등</h3>
+		<p>매달 <strong>같은 금액</strong>을 갚습니다. 초반에는 이자 비중이 크고 갈수록 원금 비중이 커집니다. 매달 나가는 돈이 일정해 계획 세우기가 쉬워 주택담보대출에서 가장 많이 씁니다.</p>
+		<h3>원금균등</h3>
+		<p>매달 <strong>같은 원금</strong>에 남은 대출금의 이자를 더해 갚습니다. 첫 달 부담이 가장 크고 점점 줄어듭니다. 원금이 빨리 줄어 <strong>총 이자는 원리금균등보다 적습니다.</strong></p>
+		<h3>만기일시</h3>
+		<p>기간 동안 <strong>이자만</strong> 내고 원금은 마지막 달에 한 번에 갚습니다. 매달 부담은 가장 작지만 원금이 줄지 않아 총 이자가 가장 큽니다. 전세자금대출에서 흔히 씁니다.</p>
+
+		<h2>이렇게 계산했어요</h2>
+		<p class="formula">월 이자율 = 연 이자율 ÷ 12<br />원리금균등 월 상환액 = 대출금 × 월 이자율 × (1 + 월 이자율)<sup>기간</sup> ÷ ((1 + 월 이자율)<sup>기간</sup> − 1)<br />매달 이자 = 남은 대출금 × 월 이자율</p>
+		<ul>
+			<li>매달 이자와 상환액은 원 단위로 반올림합니다.</li>
+			<li>반올림으로 생긴 자투리는 마지막 달에 정리해 대출금을 정확히 다 갚도록 맞춥니다. 그래서 원리금균등의 마지막 달 금액은 다른 달과 수백 원 다를 수 있습니다.</li>
+			<li>실제 은행은 이자를 일 단위로 계산하거나 원 미만을 버리는 등 방식이 조금씩 달라 몇 원~몇십 원 차이가 날 수 있습니다.</li>
+		</ul>
+
+		<h2>알아두면 좋은 점</h2>
+		<ul>
+			<li><strong>변동금리</strong> 대출은 금리가 바뀌면 상환액도 달라집니다. 이 계산은 기간 내내 금리가 같다고 가정합니다.</li>
+			<li>거치기간(이자만 내는 기간), 중도상환수수료, 보증료는 반영하지 않았습니다.</li>
+			<li>대출 한도는 DSR·LTV 같은 규제와 금융기관 심사에 따라 정해집니다.</li>
+		</ul>
+
+		<p class="notice">계산 결과는 참고용입니다. 실제 대출 조건과 상환액은 금융기관에 확인하세요.</p>
+	</section>
+</Base>
+
+<script>
+	import { calculate, METHOD_LABELS, validate, type LoanInput, type RepaymentMethod } from '../../lib/loan';
+	import { formatKoreanUnit, formatWon } from '../../lib/format';
+
+	const form = document.getElementById('loan-form') as HTMLFormElement;
+	const principalInput = document.getElementById('principal') as HTMLInputElement;
+	const errorBox = document.getElementById('form-error')!;
+	const resultBox = document.getElementById('result')!;
+	const PREVIEW_ROWS = 12;
+
+	const parseNumber = (value: string) => Number(value.replace(/[^0-9.]/g, ''));
+
+	function readInput(): LoanInput {
+		const data = new FormData(form);
+		const term = parseNumber(String(data.get('term')));
+		return {
+			principal: parseNumber(String(data.get('principal'))),
+			annualRatePercent: parseNumber(String(data.get('rate'))),
+			months: data.get('termUnit') === 'years' ? Math.round(term * 12) : Math.round(term),
+			method: data.get('method') as RepaymentMethod,
+		};
+	}
+
+	function row(cells: string[]): HTMLTableRowElement {
+		const tr = document.createElement('tr');
+		for (const text of cells) {
+			const td = document.createElement('td');
+			td.textContent = text;
+			tr.append(td);
+		}
+		return tr;
+	}
+
+	function render() {
+		const input = readInput();
+		document.getElementById('principal-hint')!.textContent =
+			input.principal > 0 ? formatKoreanUnit(input.principal) : '';
+		const error = validate(input);
+		errorBox.hidden = !error;
+		errorBox.textContent = error ?? '';
+		resultBox.style.opacity = error ? '0.4' : '1';
+		if (error) return;
+
+		const result = calculate(input);
+		const varies = input.method !== 'equal-payment';
+		document.getElementById('first-label')!.textContent = varies ? '첫 달 상환액' : '월 상환액';
+		document.getElementById('first-payment')!.textContent = formatWon(result.firstPayment);
+		document.getElementById('first-note')!.textContent = varies ? `마지막 달 ${formatWon(result.lastPayment)}` : '';
+		document.getElementById('total-interest')!.textContent = formatWon(result.totalInterest);
+		document.getElementById('total-payment')!.textContent = formatWon(result.totalPayment);
+
+		// 세 방식을 같은 조건으로 비교 (총 이자가 가장 적은 방식 강조)
+		const methods = Object.keys(METHOD_LABELS) as RepaymentMethod[];
+		const results = methods.map((method) => ({ method, result: calculate({ ...input, method }) }));
+		const minInterest = Math.min(...results.map((r) => r.result.totalInterest));
+		const compareBody = document.getElementById('compare-body')!;
+		compareBody.replaceChildren(
+			...results.map(({ method, result: r }) => {
+				const tr = row([
+					METHOD_LABELS[method] + (method === input.method ? ' (선택)' : ''),
+					formatWon(r.firstPayment),
+					formatWon(r.lastPayment),
+					formatWon(r.totalInterest),
+				]);
+				if (r.totalInterest === minInterest) tr.classList.add('best');
+				return tr;
+			}),
+		);
+		const maxInterest = Math.max(...results.map((r) => r.result.totalInterest));
+		document.getElementById('compare-note')!.textContent =
+			`같은 조건에서 총 이자는 최대 ${formatKoreanUnit(maxInterest - minInterest)} 차이가 납니다.`;
+
+		const toRow = (r: (typeof result.schedule)[number]) =>
+			row([`${r.month}회`, formatWon(r.payment), formatWon(r.principal), formatWon(r.interest), formatWon(r.balance)]);
+		document.getElementById('schedule-body')!.replaceChildren(...result.schedule.slice(0, PREVIEW_ROWS).map(toRow));
+		document.getElementById('schedule-rest')!.replaceChildren(...result.schedule.slice(PREVIEW_ROWS).map(toRow));
+		(document.getElementById('schedule-more') as HTMLElement).hidden = result.schedule.length <= PREVIEW_ROWS;
+	}
+
+	// 대출금은 입력하는 동안 쉼표를 넣어 읽기 쉽게
+	principalInput.addEventListener('input', () => {
+		const digits = principalInput.value.replace(/[^0-9]/g, '');
+		principalInput.value = digits ? Number(digits).toLocaleString('ko-KR') : '';
+	});
+	form.addEventListener('input', render);
+	form.addEventListener('submit', (event) => event.preventDefault());
+	render();
+</script>

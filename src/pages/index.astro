@@ -1,0 +1,37 @@
+---
+import Base from '../layouts/Base.astro';
+
+// 계산기 목록. 준비 중인 것도 보여줘 사이트가 다룰 범위를 알린다
+const tools = [
+	{ href: '/loan/', name: '대출 상환 계산기', desc: '원리금균등·원금균등·만기일시 월 상환액과 총 이자 비교', ready: true },
+	{ href: null, name: '전세자금대출 이자', desc: '보증금과 대출 비율로 매달 내는 이자 계산', ready: false },
+	{ href: null, name: '중개보수(복비)', desc: '매매·전세·월세 법정 상한 요율로 계산', ready: false },
+	{ href: null, name: '전월세 전환', desc: '전세 ↔ 월세 바꿀 때 적정 금액', ready: false },
+	{ href: null, name: '자동차 할부 vs 리스', desc: '할부·리스·현금 구매 총비용 비교', ready: false },
+	{ href: null, name: 'DSR', desc: '소득 대비 대출 원리금 비율과 추가 대출 여력', ready: false },
+];
+---
+
+<Base title="집·대출·차, 큰돈 드는 계산을 정확하게" description="대출 상환, 전세대출 이자, 중개보수, 전월세 전환, 자동차 할부까지. 공인중개사가 계산 방법까지 풀어 설명하는 계산기.">
+	<h1>집·대출·차,<br />큰돈 드는 계산을 정확하게</h1>
+	<p class="lead">결과만 보여주지 않고, 어떻게 계산했는지와 주의할 점까지 함께 설명합니다. 공인중개사가 만든 계산기입니다.</p>
+
+	<div class="tools">
+		{
+			tools.map((tool) =>
+				tool.ready ? (
+					<a class="tool" href={tool.href}>
+						<strong>{tool.name}</strong>
+						<span>{tool.desc}</span>
+					</a>
+				) : (
+					<div class="tool soon" aria-disabled="true">
+						<strong>{tool.name}</strong>
+						<span>{tool.desc}</span>
+						<span class="tag">준비 중</span>
+					</div>
+				),
+			)
+		}
+	</div>
+</Base>

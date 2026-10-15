@@ -1,0 +1,54 @@
+---
+import '../styles/global.css';
+
+interface Props {
+	/** 브라우저 탭·검색 결과 제목 (사이트 이름은 자동으로 붙는다) */
+	title: string;
+	/** 검색 결과 설명 */
+	description: string;
+}
+
+const { title, description } = Astro.props;
+const siteName = '집돈 계산기';
+const fullTitle = Astro.url.pathname === '/' ? `${siteName} | ${title}` : `${title} | ${siteName}`;
+const canonical = new URL(Astro.url.pathname, Astro.site).toString();
+---
+
+<!doctype html>
+<html lang="ko">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>{fullTitle}</title>
+		<meta name="description" content={description} />
+		<link rel="canonical" href={canonical} />
+		<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+		<link rel="sitemap" href="/sitemap-index.xml" />
+		<meta name="theme-color" content="#0f766e" />
+		<meta property="og:type" content="website" />
+		<meta property="og:site_name" content={siteName} />
+		<meta property="og:title" content={fullTitle} />
+		<meta property="og:description" content={description} />
+		<meta property="og:url" content={canonical} />
+		<meta property="og:locale" content="ko_KR" />
+	</head>
+	<body>
+		<header class="site-header">
+			<div class="container header-inner">
+				<a class="logo" href="/">집돈 <span>계산기</span></a>
+				<nav aria-label="계산기">
+					<a href="/loan/">대출 상환</a>
+				</nav>
+			</div>
+		</header>
+		<main class="container">
+			<slot />
+		</main>
+		<footer class="site-footer">
+			<div class="container">
+				<p>계산 결과는 참고용이며, 실제 대출 조건과 금액은 금융기관에 확인하세요.</p>
+				<p>© 집돈 계산기</p>
+			</div>
+		</footer>
+	</body>
+</html>
