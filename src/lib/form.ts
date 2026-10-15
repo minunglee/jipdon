@@ -7,6 +7,13 @@ export function parseNumber(value: FormDataEntryValue | null): number {
 	return text === '' ? NaN : Number(text);
 }
 
+/** 음수도 받는 숫자 입력 (예: 예상 수익률 -5%) */
+export function parseSignedNumber(value: FormDataEntryValue | null): number {
+	const text = String(value ?? '').trim();
+	const number = parseNumber(text);
+	return text.startsWith('-') || text.startsWith('−') ? -number : number;
+}
+
 /**
  * 금액 입력칸: 입력하는 동안 쉼표를 넣고, 옆 안내(data-hint로 지정한 요소)에 "1억 5,000만 원"처럼 보여준다.
  * <input data-money data-hint="id"> 를 모두 찾아 연결한다.

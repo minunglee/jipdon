@@ -12,9 +12,10 @@
 | [중개보수(복비)](https://jipdon.com/brokerage-fee/) | 공인중개사법 시행규칙 별표 1 (2021.10.19 시행) 상한 요율·한도, 월세 ×100/×70 환산 |
 | [전월세 전환](https://jipdon.com/rent-conversion/) | 주택임대차보호법 시행령 제9조 상한(기준금리 + 2%, 최대 10%) |
 | [자동차 할부](https://jipdon.com/car-installment/) | 원리금균등, 기간별 비교 |
+| [적립식·거치식 투자](https://jipdon.com/invest/) | S&P 500(SPY)·나스닥 100(QQQ) 2016~2025 배당 재투자 총수익률 재현, 목표 금액 월 적립액 역산 |
 | [DSR](https://jipdon.com/dsr/) | 연간 원리금 ÷ 연 소득, 전세대출은 이자만, 스트레스 가산금리, 한도 내 최대 대출액 |
 
-계산 로직은 `src/lib/`에 있고 테스트 45개로 검증합니다. 기준금리처럼 바뀌는 값은 `src/data/rates.ts` 한 곳에서 관리합니다.
+계산 로직은 `src/lib/`에 있고 테스트 57개로 검증합니다. 기준금리는 `src/data/rates.ts`, 과거 지수 수익률은 `src/data/market.ts` 한 곳에서 관리합니다.
 
 ## 구조
 

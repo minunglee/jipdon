@@ -11,6 +11,7 @@ export const TOOLS: Tool[] = [
 	{ href: '/brokerage-fee/', name: '중개보수(복비) 계산기', desc: '매매·전세·월세 법정 상한 요율과 한도로 계산' },
 	{ href: '/rent-conversion/', name: '전월세 전환 계산기', desc: '보증금 ↔ 월세 바꿀 때 금액과 법정 상한 전환율' },
 	{ href: '/car-installment/', name: '자동차 할부 계산기', desc: '선수금·금리·기간별 월 납입금과 총 이자' },
+	{ href: '/invest/', name: '적립식·거치식 투자 계산기', desc: 'S&P 500·나스닥 100 과거 10년 재현, 목표 금액 월 적립액' },
 	{ href: '/dsr/', name: 'DSR 계산기', desc: '소득 대비 원리금 비율과 규제 한도 내 최대 대출액' },
 ];
 
