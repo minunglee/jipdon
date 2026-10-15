@@ -324,6 +324,10 @@ th {
 	overflow-x: auto;
 }
 
+tr.down td:nth-child(2) {
+	color: var(--error);
+}
+
 tr.best td {
 	color: var(--brand);
 	font-weight: 700;

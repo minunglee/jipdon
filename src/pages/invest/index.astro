@@ -1,0 +1,409 @@
+---
+import Base from '../../layouts/Base.astro';
+import Related from '../../components/Related.astro';
+import { MARKET_DATA_CHECKED_AT, MARKETS, marketYears, type MarketKey } from '../../data/market';
+
+const years = marketYears('sp500');
+const first = years[0];
+const last = years[years.length - 1];
+
+// 안내 문구용: 각 지수의 기간 전체 연평균(기하평균) 수익률
+const cagr = (key: MarketKey) => {
+	const ys = marketYears(key);
+	const growth = ys.reduce((acc, y) => acc * (1 + MARKETS[key].returns[y] / 100), 1);
+	return ((Math.pow(growth, 1 / ys.length) - 1) * 100).toFixed(1);
+};
+const marketKeys = Object.keys(MARKETS) as MarketKey[];
+---
+
+<Base
+	title="적립식·거치식 투자 계산기 (S&P 500·나스닥 100 과거 수익률)"
+	description="매달 적립하거나 목돈을 한 번에 넣었을 때 평가액을 계산합니다. S&P 500·나스닥 100의 최근 10년 실제 연도별 수익률로 재현하거나 수익률을 직접 정할 수 있고, 목표 금액을 위한 월 적립액도 계산합니다."
+>
+	<h1>적립식·거치식 투자 계산기</h1>
+	<p class="lead">매달 꾸준히 넣거나 목돈을 한 번에 넣었을 때 얼마가 되는지, S&P 500·나스닥 100의 <strong>실제 지난 {years.length}년</strong>으로 돌려보거나 수익률을 직접 정해 계산합니다.</p>
+
+	<form id="calc-form" class="card form" novalidate>
+		<fieldset class="field" style="border: 0; padding: 0; margin: 0">
+			<legend style="font-weight: 600; margin-bottom: 6px">투자 방식</legend>
+			<div class="segmented">
+				<input type="radio" id="t-monthly" name="type" value="monthly" checked />
+				<label for="t-monthly">적립식</label>
+				<input type="radio" id="t-lump" name="type" value="lump" />
+				<label for="t-lump">거치식</label>
+				<input type="radio" id="t-both" name="type" value="both" />
+				<label for="t-both">목돈 + 적립</label>
+			</div>
+		</fieldset>
+
+		<div class="field" data-show="lump both" hidden>
+			<label for="initial">처음 넣을 목돈</label>
+			<div class="input-row">
+				<input id="initial" name="initial" inputmode="numeric" autocomplete="off" value="10,000,000" data-money data-hint="initial-hint" />
+				<span class="unit">원</span>
+			</div>
+			<p class="hint" id="initial-hint"></p>
+		</div>
+
+		<div class="field" data-show="monthly both">
+			<label for="monthly">매달 넣을 금액</label>
+			<div class="input-row">
+				<input id="monthly" name="monthly" inputmode="numeric" autocomplete="off" value="500,000" data-money data-hint="monthly-hint" />
+				<span class="unit">원</span>
+			</div>
+			<p class="hint" id="monthly-hint"></p>
+		</div>
+
+		<fieldset class="field" style="border: 0; padding: 0; margin: 0">
+			<legend style="font-weight: 600; margin-bottom: 6px">수익률</legend>
+			<div class="segmented">
+				{
+					marketKeys.map((key, i) => (
+						<>
+							<input type="radio" id={`r-${key}`} name="source" value={key} checked={i === 0} />
+							<label for={`r-${key}`}>{MARKETS[key].label}</label>
+						</>
+					))
+				}
+				<input type="radio" id="r-custom" name="source" value="custom" />
+				<label for="r-custom">직접 입력</label>
+			</div>
+		</fieldset>
+
+		<div class="field" data-source="history">
+			<label for="start">투자 시작 연도</label>
+			<select id="start" name="start">
+				{years.map((y) => <option value={y} selected={y === first}>{y}년 초 ~ {last}년 말 ({last - y + 1}년)</option>)}
+			</select>
+		</div>
+
+		<div class="field" data-source="custom" hidden>
+			<label for="rate">예상 연 수익률</label>
+			<div class="input-row">
+				<input id="rate" name="rate" inputmode="decimal" autocomplete="off" value="7" />
+				<span class="unit">%</span>
+			</div>
+		</div>
+
+		<div class="field" data-source="custom" hidden>
+			<label for="years">투자 기간</label>
+			<div class="input-row">
+				<input id="years" name="years" inputmode="numeric" autocomplete="off" value="10" />
+				<span class="unit">년</span>
+			</div>
+		</div>
+
+		<div class="field">
+			<label for="deposit-rate">비교할 예금 금리 (연)</label>
+			<div class="input-row">
+				<input id="deposit-rate" name="depositRate" inputmode="decimal" autocomplete="off" value="3" />
+				<span class="unit">%</span>
+			</div>
+			<p class="hint">같은 돈을 이 금리의 예금에 넣었다면 얼마인지 함께 보여줍니다 (세전, 매년 재예치 가정).</p>
+		</div>
+
+		<p id="form-error" class="error" role="alert" hidden></p>
+	</form>
+
+	<section id="result" aria-live="polite">
+		<dl class="summary">
+			<div class="primary">
+				<dt>최종 평가액</dt>
+				<dd id="value">-</dd>
+				<small id="value-note"></small>
+			</div>
+			<div>
+				<dt>넣은 원금</dt>
+				<dd id="contributed">-</dd>
+			</div>
+			<div>
+				<dt>수익</dt>
+				<dd id="profit">-</dd>
+				<small id="profit-note"></small>
+			</div>
+		</dl>
+		<dl class="summary">
+			<div>
+				<dt>연평균 수익률</dt>
+				<dd id="cagr">-</dd>
+				<small>수익률 자체의 기하평균</small>
+			</div>
+			<div>
+				<dt>최대 하락</dt>
+				<dd id="mdd">-</dd>
+				<small>연말 기준, 고점 대비</small>
+			</div>
+			<div>
+				<dt id="deposit-label">예금이었다면</dt>
+				<dd id="deposit-value">-</dd>
+				<small id="deposit-note"></small>
+			</div>
+		</dl>
+		<p class="notice" style="margin-top: 16px">과거 수익률은 미래 수익을 보장하지 않습니다. 같은 지수라도 투자를 시작한 해에 따라 결과가 크게 달라집니다.</p>
+
+		<h2>연도별 흐름</h2>
+		<div class="card">
+			<svg id="chart" viewBox="0 0 400 240" role="img" aria-label="연도별 평가액과 넣은 원금 그래프" style="width: 100%; height: auto; display: block"></svg>
+			<p class="muted" style="margin: 8px 0 0; font-size: 0.85rem">
+				<span style="color: var(--brand)">━</span> 평가액 &nbsp; <span style="color: var(--muted)">┅</span> 넣은 원금
+			</p>
+		</div>
+
+		<div class="card table-wrap" style="margin-top: 16px">
+			<table>
+				<thead><tr><th id="col-year">연도</th><th>수익률</th><th>넣은 원금</th><th>평가액</th><th>수익</th></tr></thead>
+				<tbody id="rows"></tbody>
+			</table>
+		</div>
+	</section>
+
+	<h2>목표 금액 만들기</h2>
+	<p>예: 5년 뒤 전세 보증금 1억 원을 마련하려면 매달 얼마씩 넣어야 할까요?</p>
+	<form id="goal-form" class="card form" novalidate>
+		<div class="field">
+			<label for="goal-target">목표 금액</label>
+			<div class="input-row">
+				<input id="goal-target" name="target" inputmode="numeric" autocomplete="off" value="100,000,000" data-money data-hint="goal-target-hint" />
+				<span class="unit">원</span>
+			</div>
+			<p class="hint" id="goal-target-hint"></p>
+		</div>
+		<div class="field">
+			<label for="goal-initial">지금 가진 돈</label>
+			<div class="input-row">
+				<input id="goal-initial" name="initial" inputmode="numeric" autocomplete="off" value="20,000,000" data-money data-hint="goal-initial-hint" />
+				<span class="unit">원</span>
+			</div>
+			<p class="hint" id="goal-initial-hint"></p>
+		</div>
+		<div class="field">
+			<label for="goal-years">기간</label>
+			<div class="input-row">
+				<input id="goal-years" name="years" inputmode="numeric" autocomplete="off" value="5" />
+				<span class="unit">년</span>
+			</div>
+		</div>
+		<div class="field">
+			<label for="goal-rate">예상 연 수익률</label>
+			<div class="input-row">
+				<input id="goal-rate" name="rate" inputmode="decimal" autocomplete="off" value="3" />
+				<span class="unit">%</span>
+			</div>
+			<p class="hint">
+				참고: {first}~{last}년 연평균
+				{marketKeys.map((key, i) => <>{i > 0 && ', '}{MARKETS[key].label} {cagr(key)}%</>)}. 짧은 기간에 꼭 필요한 돈이라면 예금 금리처럼 보수적으로 잡는 편이 안전합니다.
+			</p>
+		</div>
+		<div class="result-box" style="margin: 0" aria-live="polite">
+			<dl>
+				<dt>매달 넣을 금액</dt>
+				<dd class="total" id="goal-monthly" style="border: 0; padding: 0">-</dd>
+				<dt>넣는 원금 합계</dt>
+				<dd id="goal-contributed">-</dd>
+			</dl>
+			<p class="error" id="goal-error" hidden style="margin: 8px 0 0"></p>
+		</div>
+	</form>
+
+	<section class="explain">
+		<h2>이렇게 계산했어요</h2>
+		<p class="formula">월 수익률 = (1 + 연 수익률)<sup>1/12</sup> − 1<br />매달 초: 평가액 = (평가액 + 이번 달 넣는 돈) × (1 + 월 수익률)</p>
+		<ul>
+			<li>연 수익률을 월 복리로 나눠 적용해, 1년 동안 그대로 둔 돈은 정확히 연 수익률만큼 불어납니다.</li>
+			<li>과거 재현은 연도마다 그해 실제 수익률을 적용합니다. 한 해 안의 등락은 고르게 퍼졌다고 가정하므로 실제 월별 등락과는 조금 다를 수 있습니다.</li>
+			<li><strong>최대 하락</strong>은 처음부터 1원을 넣어 뒀을 때 연말 기준으로 고점에서 가장 크게 떨어진 비율입니다. 한 해 안에서는 이보다 더 크게 떨어졌을 수 있습니다.</li>
+		</ul>
+
+		<h2>과거 수익률 데이터</h2>
+		<p>지수 자체 대신 실제로 살 수 있는 대표 ETF의 <strong>배당 재투자 총수익률</strong>(달러 기준)을 썼습니다. 운용보수가 이미 빠져 있어 투자자가 실제로 얻은 수익에 가깝습니다.</p>
+		<div class="card table-wrap">
+			<table>
+				<thead>
+					<tr><th>연도</th>{marketKeys.map((key) => <th>{MARKETS[key].label} ({MARKETS[key].etf})</th>)}</tr>
+				</thead>
+				<tbody>
+					{
+						years.map((y) => (
+							<tr>
+								<td>{y}</td>
+								{marketKeys.map((key) => <td>{MARKETS[key].returns[y].toFixed(2)}%</td>)}
+							</tr>
+						))
+					}
+				</tbody>
+			</table>
+		</div>
+		<p class="muted">출처: ETFReplay, ChartRow (두 곳 값 대조), {MARKET_DATA_CHECKED_AT.replace(/-/g, '.')} 확인.</p>
+
+		<h2>알아두면 좋은 점</h2>
+		<ul>
+			<li><strong>환율</strong>: 위 수익률은 달러 기준입니다. 원화로 투자하면 그 기간 원·달러 환율 변화만큼 결과가 달라집니다. 국내 상장 해외 ETF 중 환헤지(H) 상품은 환율 영향이 거의 없는 대신 헤지 비용이 듭니다.</li>
+			<li><strong>세금</strong>: 해외 상장 ETF는 연간 양도차익 250만 원을 넘는 부분에 22%(지방세 포함)의 양도소득세가 붙습니다. 국내 상장 해외 ETF는 매도 차익과 분배금에 배당소득세 15.4%가 붙고, ISA·연금저축 계좌를 쓰면 과세를 미루거나 줄일 수 있습니다.</li>
+			<li><strong>예금 비교</strong>는 이자소득세(15.4%)를 빼기 전 금액입니다.</li>
+			<li>단기간에 꼭 써야 하는 돈(전세 보증금, 잔금 등)은 하락 위험이 있는 자산보다 예·적금이 안전할 수 있습니다.</li>
+		</ul>
+
+		<p class="notice">이 계산기는 투자 권유가 아니며, 결과는 과거 데이터와 입력한 가정에 따른 참고용입니다. 투자 판단과 그 결과의 책임은 투자자 본인에게 있습니다.</p>
+	</section>
+
+	<Related />
+</Base>
+
+<script>
+	import { MARKETS, marketYears, type MarketKey } from '../../data/market';
+	import { requiredMonthly, simulate, validate, type InvestInput, type InvestResult } from '../../lib/invest';
+	import { formatKoreanUnit, formatWon } from '../../lib/format';
+	import { bindMoneyInputs, parseNumber, parseSignedNumber, setText, showError } from '../../lib/form';
+
+	const form = document.getElementById('calc-form') as HTMLFormElement;
+	const goalForm = document.getElementById('goal-form') as HTMLFormElement;
+	const errorBox = document.getElementById('form-error')!;
+	const resultBox = document.getElementById('result')!;
+	const percent = (v: number) => `${v > 0 ? '+' : ''}${v.toFixed(1)}%`;
+
+	interface Plan {
+		input: InvestInput;
+		/** 표의 첫 열에 쓸 이름 (과거 재현이면 실제 연도) */
+		labels: string[];
+		description: string;
+	}
+
+	function readPlan(): Plan {
+		const data = new FormData(form);
+		const type = String(data.get('type'));
+		const source = String(data.get('source'));
+		const initial = type === 'monthly' ? 0 : parseNumber(data.get('initial')) || 0;
+		const monthly = type === 'lump' ? 0 : parseNumber(data.get('monthly')) || 0;
+
+		if (source === 'custom') {
+			const rate = parseSignedNumber(data.get('rate'));
+			const years = Math.round(parseNumber(data.get('years')));
+			const count = Number.isFinite(years) && years >= 1 && years <= 50 ? years : 0;
+			return {
+				input: { initial, monthly, yearlyReturns: Array(count).fill(rate) },
+				labels: Array.from({ length: count }, (_, i) => `${i + 1}년 차`),
+				description: `연 ${rate}% · ${years}년`,
+			};
+		}
+		const key = source as MarketKey;
+		const start = Number(data.get('start'));
+		const years = marketYears(key).filter((y) => y >= start);
+		return {
+			input: { initial, monthly, yearlyReturns: years.map((y) => MARKETS[key].returns[y]) },
+			labels: years.map(String),
+			description: `${MARKETS[key].label} ${years[0]}~${years[years.length - 1]}년`,
+		};
+	}
+
+	function render() {
+		const data = new FormData(form);
+		const type = String(data.get('type'));
+		const isCustom = data.get('source') === 'custom';
+		for (const el of form.querySelectorAll<HTMLElement>('[data-show]')) el.hidden = !el.dataset.show!.split(' ').includes(type);
+		for (const el of form.querySelectorAll<HTMLElement>('[data-source]')) el.hidden = (el.dataset.source === 'custom') !== isCustom;
+
+		const plan = readPlan();
+		const depositRate = parseNumber(data.get('depositRate'));
+		let error = validate(plan.input);
+		if (!error && !(depositRate >= 0 && depositRate <= 30)) error = '예금 금리는 0~30% 사이로 입력해주세요.';
+		if (!showError(error, errorBox, resultBox)) return;
+
+		const r = simulate(plan.input);
+		const deposit = simulate({ ...plan.input, yearlyReturns: plan.input.yearlyReturns.map(() => depositRate) });
+
+		setText('value', formatKoreanUnit(r.value));
+		setText('value-note', plan.description);
+		setText('contributed', formatKoreanUnit(r.contributed));
+		setText('profit', `${r.profit >= 0 ? '+' : '-'}${formatKoreanUnit(Math.abs(r.profit))}`);
+		setText('profit-note', `원금 대비 ${percent(r.profitPercent)}`);
+		setText('cagr', percent(r.cagrPercent));
+		setText('mdd', r.maxDrawdownPercent < 0 ? `${r.maxDrawdownPercent.toFixed(1)}%` : '없음');
+		setText('deposit-label', `연 ${depositRate}% 예금이었다면`);
+		setText('deposit-value', formatKoreanUnit(deposit.value));
+		const gap = r.value - deposit.value;
+		setText('deposit-note', `투자가 ${formatKoreanUnit(Math.abs(gap))} ${gap >= 0 ? '많음' : '적음'}`);
+
+		setText('col-year', isCustom ? '기간' : '연도');
+		document.getElementById('rows')!.replaceChildren(
+			...r.rows.map((row, i) => {
+				const tr = document.createElement('tr');
+				for (const text of [
+					plan.labels[i],
+					percent(row.returnPercent),
+					formatWon(row.contributed),
+					formatWon(row.value),
+					formatWon(row.value - row.contributed),
+				]) {
+					const td = document.createElement('td');
+					td.textContent = text;
+					tr.append(td);
+				}
+				if (row.returnPercent < 0) tr.classList.add('down');
+				return tr;
+			}),
+		);
+		drawChart(r, plan.labels);
+	}
+
+	/** 평가액(실선)과 넣은 원금(점선)을 연말 기준으로 그린다 */
+	function drawChart(r: InvestResult, labels: string[]) {
+		const svg = document.getElementById('chart')!;
+		const W = 400, H = 240, left = 4, right = 4, top = 24, bottom = 26;
+		const points = [{ contributed: 0, value: 0 }, ...r.rows];
+		const max = Math.max(...points.map((p) => Math.max(p.value, p.contributed))) || 1;
+		const x = (i: number) => left + ((W - left - right) * i) / (points.length - 1);
+		const y = (v: number) => top + (H - top - bottom) * (1 - v / max);
+		const path = (pick: (p: (typeof points)[number]) => number) =>
+			points.map((p, i) => `${i === 0 ? 'M' : 'L'}${x(i).toFixed(1)},${y(pick(p)).toFixed(1)}`).join(' ');
+
+		const step = Math.ceil(labels.length / 6);
+		const xLabels = labels
+			.map((label, i) => {
+				if (i % step !== step - 1 && i !== labels.length - 1) return '';
+				// 마지막 라벨은 오른쪽 끝에 맞춰 잘리지 않게
+				const anchor = i === labels.length - 1 ? 'end' : 'middle';
+				return `<text x="${x(i + 1)}" y="${H - 6}" text-anchor="${anchor}">${label}</text>`;
+			})
+			.join('');
+		svg.innerHTML = `
+			<g font-size="13" fill="var(--muted)">
+				<line x1="${left}" y1="${y(0)}" x2="${W - right}" y2="${y(0)}" stroke="var(--border)" />
+				<line x1="${left}" y1="${y(max)}" x2="${W - right}" y2="${y(max)}" stroke="var(--border)" stroke-dasharray="2 4" />
+				<text x="${left}" y="${y(max) - 6}">${formatKoreanUnit(max)}</text>
+				${xLabels}
+			</g>
+			<path d="${path((p) => p.contributed)}" fill="none" stroke="var(--muted)" stroke-width="2" stroke-dasharray="6 5" />
+			<path d="${path((p) => p.value)}" fill="none" stroke="var(--brand)" stroke-width="3" stroke-linejoin="round" />`;
+	}
+
+	function renderGoal() {
+		const data = new FormData(goalForm);
+		const target = parseNumber(data.get('target'));
+		const initial = parseNumber(data.get('initial')) || 0;
+		const years = Math.round(parseNumber(data.get('years')));
+		const rate = parseNumber(data.get('rate'));
+		const errorEl = document.getElementById('goal-error')!;
+		let error: string | null = null;
+		if (!(target > 0)) error = '목표 금액을 입력해주세요.';
+		else if (!(years >= 1 && years <= 50)) error = '기간을 1~50년으로 입력해주세요.';
+		else if (!(rate >= 0 && rate <= 30)) error = '수익률은 0~30% 사이로 입력해주세요.';
+		errorEl.hidden = !error;
+		errorEl.textContent = error ?? '';
+		if (error) {
+			setText('goal-monthly', '-');
+			setText('goal-contributed', '-');
+			return;
+		}
+		const monthly = requiredMonthly(target, initial, rate, years);
+		setText('goal-monthly', monthly === 0 ? '지금 가진 돈으로 충분' : formatWon(monthly));
+		setText('goal-contributed', formatKoreanUnit(initial + monthly * years * 12));
+	}
+
+	bindMoneyInputs();
+	form.addEventListener('input', render);
+	form.addEventListener('submit', (event) => event.preventDefault());
+	goalForm.addEventListener('input', renderGoal);
+	goalForm.addEventListener('submit', (event) => event.preventDefault());
+	render();
+	renderGoal();
+</script>
