@@ -1,5 +1,6 @@
 ---
 import Base from '../../layouts/Base.astro';
+import Related from '../../components/Related.astro';
 ---
 
 <Base
@@ -13,7 +14,7 @@ import Base from '../../layouts/Base.astro';
 		<div class="field">
 			<label for="principal">대출금</label>
 			<div class="input-row">
-				<input id="principal" name="principal" inputmode="numeric" autocomplete="off" value="100,000,000" />
+				<input id="principal" name="principal" inputmode="numeric" autocomplete="off" value="100,000,000" data-money data-hint="principal-hint" />
 				<span class="unit">원</span>
 			</div>
 			<p class="hint" id="principal-hint"></p>
@@ -124,26 +125,26 @@ import Base from '../../layouts/Base.astro';
 
 		<p class="notice">계산 결과는 참고용입니다. 실제 대출 조건과 상환액은 금융기관에 확인하세요.</p>
 	</section>
+
+	<Related />
 </Base>
 
 <script>
 	import { calculate, METHOD_LABELS, validate, type LoanInput, type RepaymentMethod } from '../../lib/loan';
 	import { formatKoreanUnit, formatWon } from '../../lib/format';
+	import { bindMoneyInputs, parseNumber, showError } from '../../lib/form';
 
 	const form = document.getElementById('loan-form') as HTMLFormElement;
-	const principalInput = document.getElementById('principal') as HTMLInputElement;
 	const errorBox = document.getElementById('form-error')!;
 	const resultBox = document.getElementById('result')!;
 	const PREVIEW_ROWS = 12;
 
-	const parseNumber = (value: string) => Number(value.replace(/[^0-9.]/g, ''));
-
 	function readInput(): LoanInput {
 		const data = new FormData(form);
-		const term = parseNumber(String(data.get('term')));
+		const term = parseNumber(data.get('term'));
 		return {
-			principal: parseNumber(String(data.get('principal'))),
-			annualRatePercent: parseNumber(String(data.get('rate'))),
+			principal: parseNumber(data.get('principal')),
+			annualRatePercent: parseNumber(data.get('rate')),
 			months: data.get('termUnit') === 'years' ? Math.round(term * 12) : Math.round(term),
 			method: data.get('method') as RepaymentMethod,
 		};
@@ -161,13 +162,7 @@ import Base from '../../layouts/Base.astro';
 
 	function render() {
 		const input = readInput();
-		document.getElementById('principal-hint')!.textContent =
-			input.principal > 0 ? formatKoreanUnit(input.principal) : '';
-		const error = validate(input);
-		errorBox.hidden = !error;
-		errorBox.textContent = error ?? '';
-		resultBox.style.opacity = error ? '0.4' : '1';
-		if (error) return;
+		if (!showError(validate(input), errorBox, resultBox)) return;
 
 		const result = calculate(input);
 		const varies = input.method !== 'equal-payment';
@@ -205,11 +200,7 @@ import Base from '../../layouts/Base.astro';
 		(document.getElementById('schedule-more') as HTMLElement).hidden = result.schedule.length <= PREVIEW_ROWS;
 	}
 
-	// 대출금은 입력하는 동안 쉼표를 넣어 읽기 쉽게
-	principalInput.addEventListener('input', () => {
-		const digits = principalInput.value.replace(/[^0-9]/g, '');
-		principalInput.value = digits ? Number(digits).toLocaleString('ko-KR') : '';
-	});
+	bindMoneyInputs();
 	form.addEventListener('input', render);
 	form.addEventListener('submit', (event) => event.preventDefault());
 	render();

@@ -1,0 +1,153 @@
+---
+import Base from '../../layouts/Base.astro';
+import Related from '../../components/Related.astro';
+---
+
+<Base
+	title="자동차 할부 계산기 (월 납입금·총 이자)"
+	description="차량 가격, 선수금, 할부 금리와 기간을 넣으면 월 납입금과 총 이자, 실제로 내는 차값을 계산하고 기간별로 비교합니다."
+>
+	<h1>자동차 할부 계산기</h1>
+	<p class="lead">차값에서 선수금을 빼고 남은 금액을 몇 개월로 나눠 낼 때, 매달 얼마씩 내고 이자는 총 얼마인지 계산합니다.</p>
+
+	<form id="calc-form" class="card form" novalidate>
+		<div class="field">
+			<label for="price">차량 가격</label>
+			<div class="input-row">
+				<input id="price" name="price" inputmode="numeric" autocomplete="off" value="35,000,000" data-money data-hint="price-hint" />
+				<span class="unit">원</span>
+			</div>
+			<p class="hint" id="price-hint"></p>
+		</div>
+
+		<div class="field">
+			<label for="down">선수금</label>
+			<div class="input-row">
+				<input id="down" name="down" inputmode="numeric" autocomplete="off" value="7,000,000" data-money data-hint="down-hint" />
+				<span class="unit">원</span>
+			</div>
+			<p class="hint" id="down-hint"></p>
+		</div>
+
+		<div class="field">
+			<label for="rate">할부 금리 (연)</label>
+			<div class="input-row">
+				<input id="rate" name="rate" inputmode="decimal" autocomplete="off" value="5.5" />
+				<span class="unit">%</span>
+			</div>
+			<p class="hint">무이자 할부면 0을 넣으세요.</p>
+		</div>
+
+		<div class="field">
+			<label for="months">할부 기간</label>
+			<select id="months" name="months">
+				<option value="12">12개월</option>
+				<option value="24">24개월</option>
+				<option value="36" selected>36개월</option>
+				<option value="48">48개월</option>
+				<option value="60">60개월</option>
+				<option value="72">72개월</option>
+			</select>
+		</div>
+
+		<p id="form-error" class="error" role="alert" hidden></p>
+	</form>
+
+	<section id="result" aria-live="polite">
+		<dl class="summary">
+			<div class="primary">
+				<dt>월 납입금</dt>
+				<dd id="monthly">-</dd>
+				<small id="financed"></small>
+			</div>
+			<div>
+				<dt>총 이자</dt>
+				<dd id="interest">-</dd>
+			</div>
+			<div>
+				<dt>실제로 내는 차값</dt>
+				<dd id="total">-</dd>
+				<small>선수금 + 할부 원리금</small>
+			</div>
+		</dl>
+
+		<h2>할부 기간별 비교</h2>
+		<div class="card table-wrap">
+			<table>
+				<thead><tr><th>기간</th><th>월 납입금</th><th>총 이자</th></tr></thead>
+				<tbody id="compare-body"></tbody>
+			</table>
+		</div>
+	</section>
+
+	<section class="explain">
+		<h2>이렇게 계산했어요</h2>
+		<p class="formula">할부원금 = 차량 가격 − 선수금<br />월 납입금 = 할부원금 × 월 금리 × (1 + 월 금리)<sup>개월</sup> ÷ ((1 + 월 금리)<sup>개월</sup> − 1)</p>
+		<ul>
+			<li>자동차 할부는 대부분 매달 같은 금액을 내는 <strong>원리금균등</strong> 방식입니다.</li>
+			<li>매달 이자는 원 단위로 반올림하고, 자투리는 마지막 달에 정리합니다.</li>
+		</ul>
+
+		<h2>알아두면 좋은 점</h2>
+		<ul>
+			<li><strong>취득세·공채·탁송료·보험료</strong>는 차량 가격과 별도입니다. 승용차 취득세는 보통 차량 가격(공급가액)의 7%(경차 4%)이며 감면 제도가 있을 수 있습니다.</li>
+			<li>할부 기간이 길수록 월 부담은 줄지만 총 이자는 늘어납니다. 위 비교표에서 차이를 확인하세요.</li>
+			<li>할부 금리 외에 취급수수료가 붙는지 확인하세요. 수수료가 있으면 실제 부담 금리는 더 높습니다.</li>
+			<li>할부 대출도 DSR 계산에 포함되는 가계대출이라, 주택담보대출 한도에 영향을 줄 수 있습니다.</li>
+		</ul>
+
+		<p class="notice">계산 결과는 참고용입니다. 실제 할부 조건은 판매사·캐피탈사에 확인하세요.</p>
+	</section>
+
+	<Related />
+</Base>
+
+<script>
+	import { calculate, validate, type CarInput } from '../../lib/car';
+	import { formatKoreanUnit, formatWon } from '../../lib/format';
+	import { bindMoneyInputs, parseNumber, setText, showError } from '../../lib/form';
+
+	const form = document.getElementById('calc-form') as HTMLFormElement;
+	const errorBox = document.getElementById('form-error')!;
+	const resultBox = document.getElementById('result')!;
+	const TERMS = [12, 24, 36, 48, 60, 72];
+
+	function readInput(): CarInput {
+		const data = new FormData(form);
+		return {
+			price: parseNumber(data.get('price')),
+			downPayment: parseNumber(data.get('down')) || 0,
+			annualRatePercent: parseNumber(data.get('rate')),
+			months: Number(data.get('months')),
+		};
+	}
+
+	function render() {
+		const input = readInput();
+		if (!showError(validate(input), errorBox, resultBox)) return;
+		const r = calculate(input);
+		setText('monthly', formatWon(r.monthlyPayment));
+		setText('financed', `할부원금 ${formatKoreanUnit(r.financed)} · ${input.months}개월`);
+		setText('interest', formatWon(r.totalInterest));
+		setText('total', formatWon(r.totalCost));
+
+		document.getElementById('compare-body')!.replaceChildren(
+			...TERMS.map((months) => {
+				const c = calculate({ ...input, months });
+				const tr = document.createElement('tr');
+				if (months === input.months) tr.classList.add('best');
+				for (const text of [`${months}개월`, formatWon(c.monthlyPayment), formatWon(c.totalInterest)]) {
+					const td = document.createElement('td');
+					td.textContent = text;
+					tr.append(td);
+				}
+				return tr;
+			}),
+		);
+	}
+
+	bindMoneyInputs();
+	form.addEventListener('input', render);
+	form.addEventListener('submit', (event) => event.preventDefault());
+	render();
+</script>

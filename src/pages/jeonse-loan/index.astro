@@ -1,0 +1,146 @@
+---
+import Base from '../../layouts/Base.astro';
+import Related from '../../components/Related.astro';
+---
+
+<Base
+	title="전세대출 이자 계산기 (월 이자·보증료·총비용)"
+	description="전세 보증금과 대출 비율, 금리를 넣으면 매달 내는 전세자금대출 이자와 보증료, 계약 기간 동안의 총비용을 계산합니다."
+>
+	<h1>전세대출 이자 계산기</h1>
+	<p class="lead">보증금 중 얼마를 빌리면 매달 이자가 얼마인지, 보증료까지 더하면 2년 동안 얼마가 드는지 계산합니다.</p>
+
+	<form id="calc-form" class="card form" novalidate>
+		<div class="field">
+			<label for="deposit">전세 보증금</label>
+			<div class="input-row">
+				<input id="deposit" name="deposit" inputmode="numeric" autocomplete="off" value="300,000,000" data-money data-hint="deposit-hint" />
+				<span class="unit">원</span>
+			</div>
+			<p class="hint" id="deposit-hint"></p>
+		</div>
+
+		<div class="field">
+			<label for="ratio">대출 비율 (보증금의)</label>
+			<div class="input-row">
+				<input id="ratio" name="ratio" inputmode="decimal" autocomplete="off" value="80" />
+				<span class="unit">%</span>
+			</div>
+			<p class="hint">대출 한도는 상품과 보증기관에 따라 보증금의 70~90% 수준입니다.</p>
+		</div>
+
+		<div class="field">
+			<label for="rate">연 금리</label>
+			<div class="input-row">
+				<input id="rate" name="rate" inputmode="decimal" autocomplete="off" value="4" />
+				<span class="unit">%</span>
+			</div>
+		</div>
+
+		<div class="field">
+			<label for="years">대출 기간</label>
+			<div class="input-row">
+				<input id="years" name="years" inputmode="decimal" autocomplete="off" value="2" />
+				<span class="unit">년</span>
+			</div>
+			<p class="hint">보통 전세 계약 기간(2년)에 맞춥니다.</p>
+		</div>
+
+		<div class="field">
+			<label for="guarantee">연 보증료율 (선택)</label>
+			<div class="input-row">
+				<input id="guarantee" name="guarantee" inputmode="decimal" autocomplete="off" value="0" />
+				<span class="unit">%</span>
+			</div>
+			<p class="hint">보증기관 안내 금액이 있으면 넣으세요. 모르면 0으로 두세요.</p>
+		</div>
+
+		<p id="form-error" class="error" role="alert" hidden></p>
+	</form>
+
+	<section id="result" aria-live="polite">
+		<dl class="summary">
+			<div class="primary">
+				<dt>월 이자</dt>
+				<dd id="monthly-interest">-</dd>
+				<small id="monthly-cost-note"></small>
+			</div>
+			<div>
+				<dt>대출금</dt>
+				<dd id="loan-amount">-</dd>
+				<small id="own-funds"></small>
+			</div>
+			<div>
+				<dt>기간 총비용</dt>
+				<dd id="total-cost">-</dd>
+				<small id="total-note"></small>
+			</div>
+		</dl>
+	</section>
+
+	<section class="explain">
+		<h2>이렇게 계산했어요</h2>
+		<p class="formula">대출금 = 보증금 × 대출 비율<br />월 이자 = 대출금 × 연 금리 ÷ 12<br />연 보증료 = 대출금 × 연 보증료율</p>
+		<ul>
+			<li>전세대출은 대부분 기간 동안 <strong>이자만 내고</strong> 만기에 원금을 한 번에 갚는 만기일시 방식이라, 매달 이자가 같습니다.</li>
+			<li>월 이자는 원 단위로 반올림합니다. 실제 은행은 일 단위로 이자를 계산해 달마다 몇십 원씩 다를 수 있습니다.</li>
+		</ul>
+
+		<h2>보증료란?</h2>
+		<p>은행은 전세대출을 해줄 때 주택도시보증공사(HUG), 한국주택금융공사(HF), 서울보증보험(SGI) 같은 보증기관의 보증서를 요구합니다. 이 보증서 비용이 보증료이며, 보통 대출금의 연 0.02~0.2% 수준으로 소득·보증금·신용도에 따라 달라집니다. 정확한 금액은 대출 상담 때 안내받을 수 있습니다.</p>
+
+		<h2>알아두면 좋은 점</h2>
+		<ul>
+			<li>버팀목 전세자금대출 같은 정책 대출은 소득·자산 요건을 충족하면 일반 대출보다 금리가 낮습니다.</li>
+			<li>변동금리라면 금리가 바뀔 때마다 월 이자도 달라집니다.</li>
+			<li>대출과 별도로 <strong>전세보증금 반환보증</strong> 가입을 검토하세요. 집주인이 보증금을 돌려주지 못할 때를 대비하는 보험입니다.</li>
+		</ul>
+
+		<p class="notice">계산 결과는 참고용입니다. 실제 대출 한도·금리·보증료는 금융기관과 보증기관에 확인하세요.</p>
+	</section>
+
+	<Related />
+</Base>
+
+<script>
+	import { calculate, validate, type JeonseInput } from '../../lib/jeonse';
+	import { formatKoreanUnit, formatWon } from '../../lib/format';
+	import { bindMoneyInputs, parseNumber, setText, showError } from '../../lib/form';
+
+	const form = document.getElementById('calc-form') as HTMLFormElement;
+	const errorBox = document.getElementById('form-error')!;
+	const resultBox = document.getElementById('result')!;
+
+	function readInput(): JeonseInput {
+		const data = new FormData(form);
+		return {
+			deposit: parseNumber(data.get('deposit')),
+			loanRatioPercent: parseNumber(data.get('ratio')),
+			annualRatePercent: parseNumber(data.get('rate')),
+			months: Math.round(parseNumber(data.get('years')) * 12),
+			guaranteeRatePercent: parseNumber(data.get('guarantee')) || 0,
+		};
+	}
+
+	function render() {
+		const input = readInput();
+		if (!showError(validate(input), errorBox, resultBox)) return;
+		const r = calculate(input);
+		setText('monthly-interest', formatWon(r.monthlyInterest));
+		setText('monthly-cost-note', r.annualGuarantee > 0 ? `보증료 포함 월 ${formatWon(r.monthlyCost)}` : '');
+		setText('loan-amount', formatKoreanUnit(r.loanAmount));
+		setText('own-funds', `내 돈 ${formatKoreanUnit(r.ownFunds)} 필요`);
+		setText('total-cost', formatWon(r.totalCost));
+		setText(
+			'total-note',
+			r.totalGuarantee > 0
+				? `이자 ${formatWon(r.totalInterest)} + 보증료 ${formatWon(r.totalGuarantee)}`
+				: `${input.months}개월 이자 합계`,
+		);
+	}
+
+	bindMoneyInputs();
+	form.addEventListener('input', render);
+	form.addEventListener('submit', (event) => event.preventDefault());
+	render();
+</script>

@@ -1,0 +1,20 @@
+---
+// 계산기 페이지 아래 "다른 계산기" 목록 (현재 페이지는 뺀다)
+import { TOOLS } from '../data/tools';
+
+const others = TOOLS.filter((tool) => tool.href !== Astro.url.pathname);
+---
+
+<section class="related">
+	<h2>다른 계산기</h2>
+	<div class="tools">
+		{
+			others.map((tool) => (
+				<a class="tool" href={tool.href}>
+					<strong>{tool.name}</strong>
+					<span>{tool.desc}</span>
+				</a>
+			))
+		}
+	</div>
+</section>
