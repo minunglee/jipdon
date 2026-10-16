@@ -542,6 +542,18 @@ a.tool:hover {
 	border-radius: 12px;
 }
 
+/* 메인 계산기 묶음 */
+.tool-group + .tool-group {
+	margin-top: 28px;
+}
+
+.tool-group h2 {
+	margin: 0 0 12px;
+	color: var(--brand);
+	font-size: 1rem;
+	letter-spacing: 0.02em;
+}
+
 /* 메인 첫 영역 */
 .hero {
 	margin: 24px 0 32px;
