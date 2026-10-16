@@ -18,192 +18,217 @@ const marketKeys = Object.keys(MARKETS) as MarketKey[];
 
 <Base
 	title="적립식·거치식 투자 계산기 (S&P 500·나스닥 100)"
-	description="매달 적립하거나 목돈을 넣었을 때 평가액을 계산합니다. S&P 500·나스닥 100의 최근 10년 실제 수익률로 재현하고, 목표 금액을 위한 월 적립액도 알려줍니다."
+	description="목표 금액을 모으려면 매달 얼마를 넣어야 하는지 계산하고, S&P 500·나스닥 100의 최근 10년 실제 수익률로 적립식·거치식 결과를 재현합니다."
 >
 	<h1>적립식·거치식 투자 계산기</h1>
-	<p class="lead">매달 꾸준히 넣거나 목돈을 한 번에 넣었을 때 얼마가 되는지, S&P 500·나스닥 100의 <strong>실제 지난 {years.length}년</strong>으로 돌려보거나 수익률을 직접 정해 계산합니다.</p>
+	<p class="lead">목표 금액을 모으려면 <strong>매달 얼마씩</strong> 넣어야 하는지, 그 돈을 S&P 500·나스닥 100에 <strong>실제 지난 {years.length}년</strong> 동안 넣었다면 얼마가 됐을지 계산합니다.</p>
 
-	<form id="calc-form" class="card form" novalidate>
-		<fieldset class="field" style="border: 0; padding: 0; margin: 0">
-			<legend style="font-weight: 600; margin-bottom: 6px">투자 방식</legend>
-			<div class="segmented">
-				<input type="radio" id="t-monthly" name="type" value="monthly" checked />
-				<label for="t-monthly">적립식</label>
-				<input type="radio" id="t-lump" name="type" value="lump" />
-				<label for="t-lump">거치식</label>
-				<input type="radio" id="t-both" name="type" value="both" />
-				<label for="t-both">목돈 + 적립</label>
-			</div>
-		</fieldset>
+	<div class="tabs" role="tablist" aria-label="계산 종류">
+		<button type="button" role="tab" id="tab-btn-goal" aria-controls="tab-goal" aria-selected="true" data-tab="goal">목표 금액 모으기</button>
+		<button type="button" role="tab" id="tab-btn-simulate" aria-controls="tab-simulate" aria-selected="false" data-tab="simulate">과거 10년 돌려보기</button>
+	</div>
 
-		<div class="field" data-show="lump both" hidden>
-			<label for="initial">처음 넣을 목돈</label>
-			<div class="input-row">
-				<input id="initial" name="initial" inputmode="numeric" autocomplete="off" value="10,000,000" data-money data-hint="initial-hint" />
-				<span class="unit">원</span>
+	<section id="tab-goal" class="tab-panel" role="tabpanel" aria-labelledby="tab-btn-goal">
+		<p class="muted" style="margin-top: 0">예: 5년 뒤 전세 보증금 1억 원을 마련하려면 매달 얼마씩 넣어야 할까요?</p>
+		<form id="goal-form" class="card form" novalidate>
+			<div class="field">
+				<label for="goal-target">목표 금액</label>
+				<div class="input-row">
+					<input id="goal-target" name="target" inputmode="numeric" autocomplete="off" value="100,000,000" data-money data-hint="goal-target-hint" />
+					<span class="unit">원</span>
+				</div>
+				<p class="hint" id="goal-target-hint"></p>
 			</div>
-			<p class="hint" id="initial-hint"></p>
-		</div>
+			<div class="field">
+				<label for="goal-initial">지금 가진 돈</label>
+				<div class="input-row">
+					<input id="goal-initial" name="initial" inputmode="numeric" autocomplete="off" value="20,000,000" data-money data-hint="goal-initial-hint" />
+					<span class="unit">원</span>
+				</div>
+				<p class="hint" id="goal-initial-hint"></p>
+			</div>
+			<div class="field">
+				<label for="goal-years">기간</label>
+				<div class="input-row">
+					<input id="goal-years" name="years" inputmode="numeric" autocomplete="off" value="5" />
+					<span class="unit">년</span>
+				</div>
+			</div>
+			<div class="field">
+				<label for="goal-rate">예상 연 수익률</label>
+				<div class="input-row">
+					<input id="goal-rate" name="rate" inputmode="decimal" autocomplete="off" value="3" />
+					<span class="unit">%</span>
+				</div>
+				<p class="hint">
+					참고: {first}~{last}년 연평균
+					{marketKeys.map((key, i) => <>{i > 0 && ', '}{MARKETS[key].label} {cagr(key)}%</>)}. 짧은 기간에 꼭 필요한 돈이라면 예금 금리처럼 보수적으로 잡는 편이 안전합니다.
+				</p>
+			</div>
+			<p class="error" id="goal-error" role="alert" hidden></p>
+		</form>
 
-		<div class="field" data-show="monthly both">
-			<label for="monthly">매달 넣을 금액</label>
-			<div class="input-row">
-				<input id="monthly" name="monthly" inputmode="numeric" autocomplete="off" value="500,000" data-money data-hint="monthly-hint" />
-				<span class="unit">원</span>
+		<section id="goal-result" aria-live="polite">
+			<dl class="summary">
+				<div class="primary">
+					<dt>매달 넣을 금액</dt>
+					<dd id="goal-monthly">-</dd>
+					<small id="goal-monthly-note"></small>
+				</div>
+				<div>
+					<dt>넣는 원금 합계</dt>
+					<dd id="goal-contributed">-</dd>
+				</div>
+				<div>
+					<dt>수익으로 채우는 금액</dt>
+					<dd id="goal-growth">-</dd>
+					<small id="goal-growth-note"></small>
+				</div>
+			</dl>
+			<div class="goal-bridge card">
+				<p style="margin: 0">이 금액을 실제로 지난 10년 동안 넣었다면 얼마가 됐을까요?</p>
+				<button type="button" class="button-primary" id="goal-to-simulate">S&amp;P 500 과거 수익률로 확인하기 →</button>
 			</div>
-			<p class="hint" id="monthly-hint"></p>
-		</div>
-
-		<fieldset class="field" style="border: 0; padding: 0; margin: 0">
-			<legend style="font-weight: 600; margin-bottom: 6px">수익률</legend>
-			<div class="segmented">
-				{
-					marketKeys.map((key, i) => (
-						<>
-							<input type="radio" id={`r-${key}`} name="source" value={key} checked={i === 0} />
-							<label for={`r-${key}`}>{MARKETS[key].label}</label>
-						</>
-					))
-				}
-				<input type="radio" id="r-custom" name="source" value="custom" />
-				<label for="r-custom">직접 입력</label>
-			</div>
-		</fieldset>
-
-		<div class="field" data-source="history">
-			<label for="start">투자 시작 연도</label>
-			<select id="start" name="start">
-				{years.map((y) => <option value={y} selected={y === first}>{y}년 초 ~ {last}년 말 ({last - y + 1}년)</option>)}
-			</select>
-		</div>
-
-		<div class="field" data-source="custom" hidden>
-			<label for="rate">예상 연 수익률</label>
-			<div class="input-row">
-				<input id="rate" name="rate" inputmode="decimal" autocomplete="off" value="7" />
-				<span class="unit">%</span>
-			</div>
-		</div>
-
-		<div class="field" data-source="custom" hidden>
-			<label for="years">투자 기간</label>
-			<div class="input-row">
-				<input id="years" name="years" inputmode="numeric" autocomplete="off" value="10" />
-				<span class="unit">년</span>
-			</div>
-		</div>
-
-		<div class="field">
-			<label for="deposit-rate">비교할 예금 금리 (연)</label>
-			<div class="input-row">
-				<input id="deposit-rate" name="depositRate" inputmode="decimal" autocomplete="off" value="3" />
-				<span class="unit">%</span>
-			</div>
-			<p class="hint">같은 돈을 이 금리의 예금에 넣었다면 얼마인지 함께 보여줍니다 (세전, 매년 재예치 가정).</p>
-		</div>
-
-		<p id="form-error" class="error" role="alert" hidden></p>
-	</form>
-
-	<section id="result" aria-live="polite">
-		<dl class="summary">
-			<div class="primary">
-				<dt>최종 평가액</dt>
-				<dd id="value">-</dd>
-				<small id="value-note"></small>
-			</div>
-			<div>
-				<dt>넣은 원금</dt>
-				<dd id="contributed">-</dd>
-			</div>
-			<div>
-				<dt>수익</dt>
-				<dd id="profit">-</dd>
-				<small id="profit-note"></small>
-			</div>
-		</dl>
-		<dl class="summary">
-			<div>
-				<dt>연평균 수익률</dt>
-				<dd id="cagr">-</dd>
-				<small>수익률 자체의 기하평균</small>
-			</div>
-			<div>
-				<dt>최대 하락</dt>
-				<dd id="mdd">-</dd>
-				<small>연말 기준, 고점 대비</small>
-			</div>
-			<div>
-				<dt id="deposit-label">예금이었다면</dt>
-				<dd id="deposit-value">-</dd>
-				<small id="deposit-note"></small>
-			</div>
-		</dl>
-		<p class="notice" style="margin-top: 16px">과거 수익률은 미래 수익을 보장하지 않습니다. 같은 지수라도 투자를 시작한 해에 따라 결과가 크게 달라집니다.</p>
-
-		<h2>연도별 흐름</h2>
-		<div class="card">
-			<svg id="chart" viewBox="0 0 400 240" role="img" aria-label="연도별 평가액과 넣은 원금 그래프" style="width: 100%; height: auto; display: block"></svg>
-			<p class="muted" style="margin: 8px 0 0; font-size: 0.85rem">
-				<span style="color: var(--brand)">━</span> 평가액 &nbsp; <span style="color: var(--muted)">┅</span> 넣은 원금
-			</p>
-		</div>
-
-		<div class="card table-wrap" style="margin-top: 16px">
-			<table>
-				<thead><tr><th id="col-year">연도</th><th>수익률</th><th>넣은 원금</th><th>평가액</th><th>수익</th></tr></thead>
-				<tbody id="rows"></tbody>
-			</table>
-		</div>
+		</section>
 	</section>
 
-	<h2>목표 금액 만들기</h2>
-	<p>예: 5년 뒤 전세 보증금 1억 원을 마련하려면 매달 얼마씩 넣어야 할까요?</p>
-	<form id="goal-form" class="card form" novalidate>
-		<div class="field">
-			<label for="goal-target">목표 금액</label>
-			<div class="input-row">
-				<input id="goal-target" name="target" inputmode="numeric" autocomplete="off" value="100,000,000" data-money data-hint="goal-target-hint" />
-				<span class="unit">원</span>
+	<section id="tab-simulate" class="tab-panel" role="tabpanel" aria-labelledby="tab-btn-simulate" hidden>
+		<p class="muted" style="margin-top: 0">매달 넣거나 목돈을 넣었을 때, 과거 실제 수익률이나 직접 정한 수익률로 얼마가 되는지 계산합니다.</p>
+		<form id="calc-form" class="card form" novalidate>
+			<fieldset class="field" style="border: 0; padding: 0; margin: 0">
+				<legend style="font-weight: 600; margin-bottom: 6px">투자 방식</legend>
+				<div class="segmented">
+					<input type="radio" id="t-monthly" name="type" value="monthly" checked />
+					<label for="t-monthly">적립식</label>
+					<input type="radio" id="t-lump" name="type" value="lump" />
+					<label for="t-lump">거치식</label>
+					<input type="radio" id="t-both" name="type" value="both" />
+					<label for="t-both">목돈 + 적립</label>
+				</div>
+			</fieldset>
+
+			<div class="field" data-show="lump both" hidden>
+				<label for="initial">처음 넣을 목돈</label>
+				<div class="input-row">
+					<input id="initial" name="initial" inputmode="numeric" autocomplete="off" value="10,000,000" data-money data-hint="initial-hint" />
+					<span class="unit">원</span>
+				</div>
+				<p class="hint" id="initial-hint"></p>
 			</div>
-			<p class="hint" id="goal-target-hint"></p>
-		</div>
-		<div class="field">
-			<label for="goal-initial">지금 가진 돈</label>
-			<div class="input-row">
-				<input id="goal-initial" name="initial" inputmode="numeric" autocomplete="off" value="20,000,000" data-money data-hint="goal-initial-hint" />
-				<span class="unit">원</span>
+
+			<div class="field" data-show="monthly both">
+				<label for="monthly">매달 넣을 금액</label>
+				<div class="input-row">
+					<input id="monthly" name="monthly" inputmode="numeric" autocomplete="off" value="500,000" data-money data-hint="monthly-hint" />
+					<span class="unit">원</span>
+				</div>
+				<p class="hint" id="monthly-hint"></p>
 			</div>
-			<p class="hint" id="goal-initial-hint"></p>
-		</div>
-		<div class="field">
-			<label for="goal-years">기간</label>
-			<div class="input-row">
-				<input id="goal-years" name="years" inputmode="numeric" autocomplete="off" value="5" />
-				<span class="unit">년</span>
+
+			<fieldset class="field" style="border: 0; padding: 0; margin: 0">
+				<legend style="font-weight: 600; margin-bottom: 6px">수익률</legend>
+				<div class="segmented">
+					{
+						marketKeys.map((key, i) => (
+							<>
+								<input type="radio" id={`r-${key}`} name="source" value={key} checked={i === 0} />
+								<label for={`r-${key}`}>{MARKETS[key].label}</label>
+							</>
+						))
+					}
+					<input type="radio" id="r-custom" name="source" value="custom" />
+					<label for="r-custom">직접 입력</label>
+				</div>
+			</fieldset>
+
+			<div class="field" data-source="history">
+				<label for="start">투자 시작 연도</label>
+				<select id="start" name="start">
+					{years.map((y) => <option value={y} selected={y === first}>{y}년 초 ~ {last}년 말 ({last - y + 1}년)</option>)}
+				</select>
 			</div>
-		</div>
-		<div class="field">
-			<label for="goal-rate">예상 연 수익률</label>
-			<div class="input-row">
-				<input id="goal-rate" name="rate" inputmode="decimal" autocomplete="off" value="3" />
-				<span class="unit">%</span>
+
+			<div class="field" data-source="custom" hidden>
+				<label for="rate">예상 연 수익률</label>
+				<div class="input-row">
+					<input id="rate" name="rate" inputmode="decimal" autocomplete="off" value="7" />
+					<span class="unit">%</span>
+				</div>
 			</div>
-			<p class="hint">
-				참고: {first}~{last}년 연평균
-				{marketKeys.map((key, i) => <>{i > 0 && ', '}{MARKETS[key].label} {cagr(key)}%</>)}. 짧은 기간에 꼭 필요한 돈이라면 예금 금리처럼 보수적으로 잡는 편이 안전합니다.
-			</p>
-		</div>
-		<div class="result-box" style="margin: 0" aria-live="polite">
-			<dl>
-				<dt>매달 넣을 금액</dt>
-				<dd class="total" id="goal-monthly" style="border: 0; padding: 0">-</dd>
-				<dt>넣는 원금 합계</dt>
-				<dd id="goal-contributed">-</dd>
+
+			<div class="field" data-source="custom" hidden>
+				<label for="years">투자 기간</label>
+				<div class="input-row">
+					<input id="years" name="years" inputmode="numeric" autocomplete="off" value="10" />
+					<span class="unit">년</span>
+				</div>
+			</div>
+
+			<div class="field">
+				<label for="deposit-rate">비교할 예금 금리 (연)</label>
+				<div class="input-row">
+					<input id="deposit-rate" name="depositRate" inputmode="decimal" autocomplete="off" value="3" />
+					<span class="unit">%</span>
+				</div>
+				<p class="hint">같은 돈을 이 금리의 예금에 넣었다면 얼마인지 함께 보여줍니다 (세전, 매년 재예치 가정).</p>
+			</div>
+
+			<p id="form-error" class="error" role="alert" hidden></p>
+		</form>
+
+		<section id="result" aria-live="polite">
+			<dl class="summary">
+				<div class="primary">
+					<dt>최종 평가액</dt>
+					<dd id="value">-</dd>
+					<small id="value-note"></small>
+				</div>
+				<div>
+					<dt>넣은 원금</dt>
+					<dd id="contributed">-</dd>
+				</div>
+				<div>
+					<dt>수익</dt>
+					<dd id="profit">-</dd>
+					<small id="profit-note"></small>
+				</div>
 			</dl>
-			<p class="error" id="goal-error" hidden style="margin: 8px 0 0"></p>
-		</div>
-	</form>
+			<dl class="summary">
+				<div>
+					<dt>연평균 수익률</dt>
+					<dd id="cagr">-</dd>
+					<small>수익률 자체의 기하평균</small>
+				</div>
+				<div>
+					<dt>최대 하락</dt>
+					<dd id="mdd">-</dd>
+					<small>연말 기준, 고점 대비</small>
+				</div>
+				<div>
+					<dt id="deposit-label">예금이었다면</dt>
+					<dd id="deposit-value">-</dd>
+					<small id="deposit-note"></small>
+				</div>
+			</dl>
+			<p class="notice" style="margin-top: 16px">과거 수익률은 미래 수익을 보장하지 않습니다. 같은 지수라도 투자를 시작한 해에 따라 결과가 크게 달라집니다.</p>
+
+			<h2>연도별 흐름</h2>
+			<div class="card">
+				<svg id="chart" viewBox="0 0 400 240" role="img" aria-label="연도별 평가액과 넣은 원금 그래프" style="width: 100%; height: auto; display: block"></svg>
+				<p class="muted" style="margin: 8px 0 0; font-size: 0.85rem">
+					<span style="color: var(--brand)">━</span> 평가액 &nbsp; <span style="color: var(--muted)">┅</span> 넣은 원금
+				</p>
+			</div>
+
+			<div class="card table-wrap" style="margin-top: 16px">
+				<table>
+					<thead><tr><th id="col-year">연도</th><th>수익률</th><th>넣은 원금</th><th>평가액</th><th>수익</th></tr></thead>
+					<tbody id="rows"></tbody>
+				</table>
+			</div>
+		</section>
+	</section>
+
 
 	<section class="explain">
 		<h2>이렇게 계산했어요</h2>
@@ -394,15 +419,51 @@ const marketKeys = Object.keys(MARKETS) as MarketKey[];
 		else if (!(rate >= 0 && rate <= 30)) error = '수익률은 0~30% 사이로 입력해주세요.';
 		errorEl.hidden = !error;
 		errorEl.textContent = error ?? '';
-		if (error) {
-			setText('goal-monthly', '-');
-			setText('goal-contributed', '-');
-			return;
-		}
+		document.getElementById('goal-result')!.style.opacity = error ? '0.4' : '1';
+		if (error) return;
 		const monthly = requiredMonthly(target, initial, rate, years);
-		setText('goal-monthly', monthly === 0 ? '지금 가진 돈으로 충분' : formatWon(monthly));
-		setText('goal-contributed', formatKoreanUnit(initial + monthly * years * 12));
+		const contributed = initial + monthly * years * 12;
+		const growth = Math.max(0, target - contributed);
+		setText('goal-monthly', monthly === 0 ? '추가 적립 불필요' : formatWon(monthly));
+		setText('goal-monthly-note', monthly === 0 ? '지금 가진 돈만 굴려도 목표에 닿습니다' : `${years}년 동안 연 ${rate}%로 굴릴 때`);
+		setText('goal-contributed', formatKoreanUnit(contributed));
+		setText('goal-growth', formatKoreanUnit(growth));
+		setText('goal-growth-note', `목표 ${formatKoreanUnit(target)} 중 ${((growth / target) * 100).toFixed(1)}%`);
+		lastGoal = { initial, monthly };
 	}
+
+	// 목표 탭에서 구한 금액을 과거 수익률 탭으로 넘겨 바로 확인
+	let lastGoal = { initial: 0, monthly: 0 };
+
+	function showTab(name: string, focus = false) {
+		for (const button of document.querySelectorAll<HTMLButtonElement>('[role="tab"]')) {
+			const selected = button.dataset.tab === name;
+			button.setAttribute('aria-selected', String(selected));
+			document.getElementById(button.getAttribute('aria-controls')!)!.hidden = !selected;
+			if (selected && focus) button.focus();
+		}
+		history.replaceState(null, '', name === 'goal' ? location.pathname : `#${name}`);
+	}
+
+	for (const button of document.querySelectorAll<HTMLButtonElement>('[role="tab"]')) {
+		button.addEventListener('click', () => showTab(button.dataset.tab!));
+	}
+
+	document.getElementById('goal-to-simulate')!.addEventListener('click', () => {
+		const setValue = (id: string, value: number) => {
+			const input = document.getElementById(id) as HTMLInputElement;
+			input.value = String(value);
+			input.dispatchEvent(new Event('input', { bubbles: true }));
+		};
+		(document.getElementById(lastGoal.initial > 0 ? 't-both' : 't-monthly') as HTMLInputElement).checked = true;
+		(document.getElementById('r-sp500') as HTMLInputElement).checked = true;
+		const start = document.getElementById('start') as HTMLSelectElement;
+		start.selectedIndex = 0;
+		setValue('initial', lastGoal.initial);
+		setValue('monthly', lastGoal.monthly);
+		showTab('simulate');
+		document.querySelector('.tabs')!.scrollIntoView({ behavior: 'smooth' });
+	});
 
 	bindMoneyInputs();
 	form.addEventListener('input', render);
@@ -411,4 +472,5 @@ const marketKeys = Object.keys(MARKETS) as MarketKey[];
 	goalForm.addEventListener('submit', (event) => event.preventDefault());
 	render();
 	renderGoal();
+	if (location.hash === '#simulate') showTab('simulate');
 </script>
