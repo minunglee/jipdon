@@ -8,5 +8,6 @@ export default defineConfig({
 	output: 'static',
 	trailingSlash: 'always',
 	build: { format: 'directory' },
-	integrations: [sitemap()],
+	// lastmod: 빌드(배포) 시각을 넣어 검색엔진이 바뀐 페이지를 다시 읽게 한다
+	integrations: [sitemap({ lastmod: new Date() })],
 });
