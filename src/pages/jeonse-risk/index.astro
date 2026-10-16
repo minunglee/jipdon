@@ -1,0 +1,316 @@
+---
+import Base from '../../layouts/Base.astro';
+import Related from '../../components/Related.astro';
+---
+
+<Base
+	title="전세 위험 확인 (전세가율·깡통전세)"
+	description="국토교통부 실거래가로 아파트·빌라의 최근 매매가와 전세가를 비교해 전세가율과 깡통전세 위험 신호를 확인합니다. 수도권 83개 시군구."
+>
+	<h1>전세 위험 확인</h1>
+	<p class="lead">계약하려는 아파트·빌라의 <strong>최근 실거래 매매가와 전세가</strong>를 비교해 전세가율을 보여드립니다. 전세가율이 높을수록 집값이 조금만 내려도 보증금을 돌려받기 어려워집니다.</p>
+
+	<form id="search-form" class="card form" novalidate>
+		<div class="field">
+			<label for="region">지역</label>
+			<select id="region" name="region" required>
+				<option value="">불러오는 중…</option>
+			</select>
+		</div>
+
+		<fieldset class="field" style="border: 0; padding: 0; margin: 0">
+			<legend style="font-weight: 600; margin-bottom: 6px">주택 종류</legend>
+			<div class="segmented two">
+				<input type="radio" id="k-apt" name="kind" value="APT" checked />
+				<label for="k-apt">아파트</label>
+				<input type="radio" id="k-rh" name="kind" value="RH" />
+				<label for="k-rh">빌라 (연립·다세대)</label>
+			</div>
+		</fieldset>
+
+		<div class="field">
+			<label for="q">건물 이름 또는 동</label>
+			<input id="q" name="q" autocomplete="off" maxlength="30" placeholder="예: 래미안, 망원동" />
+			<p class="hint">비워 두면 이 지역에서 최근 거래가 많은 건물을 보여줍니다.</p>
+		</div>
+
+		<p id="search-error" class="error" role="alert" hidden></p>
+		<ul id="results" class="building-list" aria-live="polite"></ul>
+	</form>
+
+	<section id="analysis" aria-live="polite" hidden>
+		<div class="building-head">
+			<h2 id="b-name"></h2>
+			<p id="b-address" class="muted"></p>
+		</div>
+		<div id="areas"></div>
+
+		<div class="card form" style="margin-top: 20px">
+			<h3 style="margin: 0">내 보증금으로 확인하기</h3>
+			<div class="field">
+				<label for="my-area">전용면적</label>
+				<select id="my-area"></select>
+			</div>
+			<div class="field">
+				<label for="my-deposit">계약하려는 전세 보증금</label>
+				<div class="input-row">
+					<input id="my-deposit" inputmode="numeric" autocomplete="off" placeholder="예: 300,000,000" data-money data-hint="my-deposit-hint" />
+					<span class="unit">원</span>
+				</div>
+				<p class="hint" id="my-deposit-hint"></p>
+			</div>
+			<div id="my-result" class="result-box" style="margin: 0" hidden></div>
+		</div>
+
+		<p class="muted" id="data-info" style="font-size: 0.85rem; margin-top: 16px"></p>
+	</section>
+
+	<section class="explain">
+		<h2>전세가율이란?</h2>
+		<p class="formula">전세가율 = 전세 보증금 ÷ 매매가 × 100</p>
+		<p>집값 대비 보증금이 얼마나 되는지를 나타냅니다. 예를 들어 매매가 3억 원인 집의 전세가 2억 7천만 원이면 전세가율은 90%입니다. 이 경우 집값이 10%만 내려도 집을 팔아 보증금을 다 돌려받기 어려워집니다. 이런 집을 흔히 <strong>깡통전세</strong>라고 부릅니다.</p>
+
+		<h2>이렇게 계산했어요</h2>
+		<ul>
+			<li>국토교통부 실거래가 공개 자료에서 같은 건물·같은 전용면적(㎡ 반올림)의 거래를 모읍니다.</li>
+			<li>최근 <strong>12개월</strong> 거래의 <strong>중앙값</strong>을 씁니다. 급매나 특이한 거래 한두 건에 덜 흔들리게 하려는 것입니다. 12개월 안에 거래가 없으면 24개월까지 넓히고, 쓴 기간과 건수를 함께 보여드립니다.</li>
+			<li>전세는 월세가 0원인 거래만 씁니다. 계약 해제된 매매는 뺍니다.</li>
+			<li>구간: <strong>70% 미만 여유</strong>, <strong>70~80% 주의</strong>, <strong>80% 이상 위험 신호</strong>. 확정된 기준이 아니라 참고용 구분입니다.</li>
+		</ul>
+
+		<h2>꼭 함께 확인하세요</h2>
+		<ul>
+			<li><strong>등기부등본</strong>: 근저당(집을 담보로 한 대출)이 있으면 그만큼 보증금 회수 순위가 밀립니다. 전세가율이 낮아도 <strong>보증금 + 선순위 대출</strong>이 집값의 70~80%를 넘으면 위험합니다. 이 계산에는 대출이 반영되지 않습니다.</li>
+			<li><strong>전입신고와 확정일자</strong>: 이사 당일 하고, 잔금 전후로 등기부를 다시 확인하세요.</li>
+			<li><strong>전세보증금 반환보증</strong>(HUG·HF·SGI) 가입이 가능한지 미리 확인하세요. 가입이 거절되는 집이라면 다시 생각해 볼 필요가 있습니다.</li>
+			<li>빌라는 거래가 적어 시세를 판단하기 어렵습니다. 거래 건수가 적으면 공시가격·감정가도 함께 확인하세요.</li>
+		</ul>
+
+		<h2>알아두면 좋은 점</h2>
+		<ul>
+			<li>실거래 신고는 계약 후 30일 안에 하므로 최근 한 달 거래는 아직 덜 들어와 있을 수 있습니다.</li>
+			<li>현재 수도권(서울·인천·경기) 아파트와 연립·다세대 빌라를 지원합니다. 단독·다가구 주택과 오피스텔은 아직 지원하지 않습니다.</li>
+			<li>같은 건물이라도 층·향·내부 상태에 따라 시세가 다릅니다.</li>
+		</ul>
+
+		<p class="notice">이 결과는 실거래가 자료로 계산한 참고 지표이며, 특정 주택의 안전을 보장하지 않습니다. 계약 전에는 반드시 등기부등본을 확인하고 공인중개사·전문가와 상담하세요. 출처: 국토교통부 실거래가 공개시스템 (공공데이터포털)</p>
+	</section>
+
+	<Related />
+</Base>
+
+<script>
+	import { formatKoreanUnit } from '../../lib/format';
+	import { bindMoneyInputs, parseNumber } from '../../lib/form';
+
+	type Level = 'SAFE' | 'CAUTION' | 'WARNING' | 'UNKNOWN';
+	interface Region { code: string; sido: string; name: string }
+	interface Building {
+		id: number; kind: 'APT' | 'RH'; regionName: string; umd: string; jibun: string; name: string;
+		houseType?: string; buildYear?: number; saleCount: number; jeonseCount: number;
+	}
+	interface Deal { area: number; date: string; amount: number; floor?: number }
+	interface Stat { median: number; count: number; months: number; latest: string; recent: Deal[] }
+	interface AreaResult { area: number; sale?: Stat; jeonse?: Stat; ratio?: number; level: Level }
+	interface Analysis { building: Building; areas: AreaResult[]; baseDate: string; lastCollectedAt?: string }
+
+	// 운영에서는 Nginx가 같은 도메인의 /api 를 실거래가 서버로 넘긴다. 로컬 개발에서는 jipdon-api(8090)를 직접 부른다
+	const API_BASE = import.meta.env.DEV ? 'http://localhost:8090' : '';
+	const LEVEL_TEXT: Record<Level, string> = { SAFE: '여유', CAUTION: '주의', WARNING: '위험 신호', UNKNOWN: '비교 불가' };
+	const form = document.getElementById('search-form') as HTMLFormElement;
+	const regionSelect = document.getElementById('region') as HTMLSelectElement;
+	const results = document.getElementById('results')!;
+	const searchError = document.getElementById('search-error')!;
+	const analysisBox = document.getElementById('analysis')!;
+	const myArea = document.getElementById('my-area') as HTMLSelectElement;
+	const myDeposit = document.getElementById('my-deposit') as HTMLInputElement;
+	let current: Analysis | null = null;
+	let searchTimer: number | undefined;
+	let searchSeq = 0;
+
+	/** 만원 단위 금액 → "3억 2,000만 원" */
+	const won = (man: number) => formatKoreanUnit(man * 10_000);
+	const el = <K extends keyof HTMLElementTagNameMap>(tag: K, text?: string, className?: string) => {
+		const node = document.createElement(tag);
+		if (text !== undefined) node.textContent = text;
+		if (className) node.className = className;
+		return node;
+	};
+
+	async function api<T>(path: string): Promise<T> {
+		const res = await fetch(API_BASE + path, { headers: { Accept: 'application/json' } });
+		if (!res.ok) {
+			const body = await res.json().catch(() => ({}));
+			throw new Error(body.message ?? (res.status === 429 ? '요청이 많습니다. 잠시 후 다시 시도해주세요.' : '데이터를 불러오지 못했습니다.'));
+		}
+		return res.json();
+	}
+
+	async function loadRegions() {
+		try {
+			const regions = await api<Region[]>('/api/regions');
+			regionSelect.replaceChildren();
+			for (const sido of [...new Set(regions.map((r) => r.sido))]) {
+				const group = document.createElement('optgroup');
+				group.label = sido;
+				for (const r of regions.filter((r) => r.sido === sido)) {
+					const option = el('option', r.name);
+					option.value = r.code;
+					group.append(option);
+				}
+				regionSelect.append(group);
+			}
+			regionSelect.value = '11440';
+			search();
+		} catch (e) {
+			regionSelect.replaceChildren(el('option', '불러오지 못함'));
+			showSearchError((e as Error).message);
+		}
+	}
+
+	function showSearchError(message: string | null) {
+		searchError.hidden = !message;
+		searchError.textContent = message ?? '';
+	}
+
+	async function search() {
+		const data = new FormData(form);
+		const region = String(data.get('region') ?? '');
+		if (!region) return;
+		const seq = ++searchSeq;
+		const params = new URLSearchParams({ region, kind: String(data.get('kind')), q: String(data.get('q') ?? '').trim() });
+		try {
+			const buildings = await api<Building[]>(`/api/buildings?${params}`);
+			if (seq !== searchSeq) return; // 더 최근 검색이 있으면 버린다
+			showSearchError(null);
+			results.replaceChildren(
+				...(buildings.length === 0
+					? [el('li', '찾는 건물이 없습니다. 이름 일부나 동 이름으로 다시 찾아보세요.', 'muted')]
+					: buildings.map((b) => {
+							const li = el('li');
+							const button = el('button');
+							button.type = 'button';
+							button.append(el('strong', b.name || '(이름 없음)'), el('span', `${b.umd} ${b.jibun} · 최근 2년 매매 ${b.saleCount}건 · 전세 ${b.jeonseCount}건`));
+							button.addEventListener('click', () => select(b.id));
+							li.append(button);
+							return li;
+						})),
+			);
+		} catch (e) {
+			if (seq === searchSeq) showSearchError((e as Error).message);
+		}
+	}
+
+	async function select(id: number) {
+		try {
+			current = await api<Analysis>(`/api/buildings/${id}/jeonse`);
+			renderAnalysis(current);
+			history.replaceState(null, '', `#b${id}`);
+			analysisBox.scrollIntoView({ behavior: 'smooth' });
+		} catch (e) {
+			showSearchError((e as Error).message);
+		}
+	}
+
+	function renderAnalysis(a: Analysis) {
+		const b = a.building;
+		analysisBox.hidden = false;
+		document.getElementById('b-name')!.textContent = b.name || '(이름 없음)';
+		document.getElementById('b-address')!.textContent = [
+			`${b.regionName} ${b.umd} ${b.jibun}`,
+			b.houseType,
+			b.buildYear ? `${b.buildYear}년 준공` : null,
+		].filter(Boolean).join(' · ');
+
+		const areas = document.getElementById('areas')!;
+		if (a.areas.length === 0) {
+			areas.replaceChildren(el('p', '최근 2년 안에 매매·전세 거래가 없어 계산할 수 없습니다.', 'muted'));
+		} else {
+			areas.replaceChildren(...a.areas.map(areaCard));
+		}
+
+		myArea.replaceChildren(
+			...a.areas.filter((r) => r.sale).map((r) => {
+				const option = el('option', `전용 ${r.area}㎡ (매매 ${won(r.sale!.median)})`);
+				option.value = String(r.area);
+				return option;
+			}),
+		);
+		renderMine();
+
+		const collected = a.lastCollectedAt ? new Date(a.lastCollectedAt).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' }) : '-';
+		document.getElementById('data-info')!.textContent = `기준일 ${a.baseDate} · 실거래가 마지막 갱신 ${collected} · 출처: 국토교통부 실거래가 공개시스템`;
+	}
+
+	function areaCard(r: AreaResult) {
+		const card = el('article', undefined, `card area-card level-${r.level.toLowerCase()}`);
+		const head = el('div', undefined, 'area-head');
+		head.append(el('h3', `전용 ${r.area}㎡`));
+		const badge = el('span', r.ratio != null ? `전세가율 ${r.ratio.toFixed(1)}% · ${LEVEL_TEXT[r.level]}` : LEVEL_TEXT[r.level], 'level-badge');
+		head.append(badge);
+		card.append(head);
+
+		const dl = el('dl', undefined, 'area-stats');
+		const row = (label: string, s?: Stat) => {
+			dl.append(el('dt', label));
+			dl.append(el('dd', s ? `${won(s.median)} (최근 ${s.months}개월 ${s.count}건, 마지막 ${s.latest})` : '거래 없음'));
+		};
+		row('매매 중앙값', r.sale);
+		row('전세 중앙값', r.jeonse);
+		card.append(dl);
+
+		const recent = [
+			...(r.sale?.recent ?? []).map((d) => ({ ...d, type: '매매' })),
+			...(r.jeonse?.recent ?? []).map((d) => ({ ...d, type: '전세' })),
+		].sort((x, y) => y.date.localeCompare(x.date));
+		if (recent.length) {
+			const details = el('details');
+			details.append(el('summary', '근거가 된 최근 거래'));
+			const table = el('table');
+			const tbody = el('tbody');
+			for (const d of recent) {
+				const tr = el('tr');
+				tr.append(el('td', d.date), el('td', d.type), el('td', d.floor != null ? `${d.floor}층` : '-'), el('td', won(d.amount)));
+				tbody.append(tr);
+			}
+			table.append(tbody);
+			const wrap = el('div', undefined, 'table-wrap');
+			wrap.append(table);
+			details.append(wrap);
+			card.append(details);
+		}
+		return card;
+	}
+
+	function renderMine() {
+		const box = document.getElementById('my-result')!;
+		const area = current?.areas.find((r) => String(r.area) === myArea.value);
+		const deposit = parseNumber(myDeposit.value);
+		if (!area?.sale || !(deposit > 0)) {
+			box.hidden = true;
+			return;
+		}
+		const ratio = (deposit / (area.sale.median * 10_000)) * 100;
+		const level: Level = ratio >= 80 ? 'WARNING' : ratio >= 70 ? 'CAUTION' : 'SAFE';
+		box.hidden = false;
+		box.className = `result-box level-${level.toLowerCase()}`;
+		box.replaceChildren(
+			el('strong', `내 보증금 기준 전세가율 ${ratio.toFixed(1)}% · ${LEVEL_TEXT[level]}`),
+			el('p', `최근 매매 중앙값 ${won(area.sale.median)} 대비 보증금 ${formatKoreanUnit(deposit)}. 집값이 ${Math.max(0, 100 - ratio).toFixed(1)}% 넘게 내리면 집을 팔아도 보증금을 다 돌려받지 못할 수 있습니다 (선순위 대출이 없을 때 기준).`),
+		);
+	}
+
+	bindMoneyInputs();
+	form.addEventListener('submit', (e) => e.preventDefault());
+	regionSelect.addEventListener('change', search);
+	for (const radio of form.querySelectorAll('input[name="kind"]')) radio.addEventListener('change', search);
+	document.getElementById('q')!.addEventListener('input', () => {
+		clearTimeout(searchTimer);
+		searchTimer = window.setTimeout(search, 300);
+	});
+	myArea.addEventListener('change', renderMine);
+	myDeposit.addEventListener('input', renderMine);
+	loadRegions();
+	const fromHash = /^#b(\d+)$/.exec(location.hash);
+	if (fromHash) select(Number(fromHash[1]));
+</script>

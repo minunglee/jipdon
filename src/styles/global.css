@@ -491,6 +491,110 @@ details > summary {
 	grid-template-columns: repeat(2, 1fr);
 }
 
+/* 전세 위험 확인 */
+.building-list {
+	display: grid;
+	gap: 6px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.building-list button {
+	display: grid;
+	gap: 2px;
+	width: 100%;
+	padding: 12px 14px;
+	background: var(--bg);
+	color: var(--text);
+	border: 1px solid var(--border);
+	border-radius: 8px;
+	font: inherit;
+	text-align: left;
+	cursor: pointer;
+}
+
+.building-list button:hover {
+	border-color: var(--brand);
+}
+
+.building-list span {
+	color: var(--muted);
+	font-size: 0.85rem;
+}
+
+.building-head h2 {
+	margin-bottom: 0;
+}
+
+.area-card {
+	margin-top: 12px;
+	border-left: 6px solid var(--border);
+}
+
+.area-head {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+}
+
+.area-head h3 {
+	margin: 0;
+}
+
+.level-badge {
+	padding: 4px 12px;
+	border-radius: 999px;
+	background: var(--bg);
+	font-weight: 800;
+}
+
+.area-stats {
+	display: grid;
+	grid-template-columns: auto 1fr;
+	gap: 6px 16px;
+	margin: 12px 0;
+}
+
+.area-stats dt {
+	color: var(--muted);
+}
+
+.area-stats dd {
+	margin: 0;
+	font-variant-numeric: tabular-nums;
+}
+
+/* 전세가율 구간 색: 여유 청록, 주의 주황, 위험 신호 빨강 */
+.level-safe {
+	border-left-color: var(--brand);
+}
+
+.level-safe .level-badge,
+.result-box.level-safe strong {
+	color: var(--brand);
+}
+
+.level-caution {
+	border-left-color: var(--accent);
+}
+
+.level-caution .level-badge,
+.result-box.level-caution strong {
+	color: var(--accent);
+}
+
+.level-warning {
+	border-left-color: var(--error);
+}
+
+.level-warning .level-badge,
+.result-box.level-warning strong {
+	color: var(--error);
+}
+
 /* 정책 문서 */
 .doc h2 {
 	margin-top: 36px;
