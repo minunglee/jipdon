@@ -6,16 +6,27 @@ export interface Tool {
 	name: string;
 	desc: string;
 	icon: ToolIconName;
+	group: ToolGroupId;
 }
 
+/** 메인 화면에서 계산기를 나눠 보여주는 묶음 (이 순서대로 표시) */
+export const TOOL_GROUPS = [
+	{ id: 'grow', name: '투자·자동차' },
+	{ id: 'loan', name: '대출' },
+	{ id: 'home', name: '집 계약' },
+] as const;
+
+export type ToolGroupId = (typeof TOOL_GROUPS)[number]['id'];
+
+// 배열 순서 = 메인·바닥글·"다른 계산기"에 보이는 순서
 export const TOOLS: Tool[] = [
-	{ href: '/loan/', name: '대출 상환 계산기', desc: '원리금균등·원금균등·만기일시 월 상환액과 총 이자 비교', icon: 'loan' },
-	{ href: '/jeonse-loan/', name: '전세대출 이자 계산기', desc: '보증금과 대출 비율로 매달 내는 이자와 보증료 계산', icon: 'house' },
-	{ href: '/brokerage-fee/', name: '중개보수(복비) 계산기', desc: '매매·전세·월세 법정 상한 요율과 한도로 계산', icon: 'receipt' },
-	{ href: '/rent-conversion/', name: '전월세 전환 계산기', desc: '보증금 ↔ 월세 바꿀 때 금액과 법정 상한 전환율', icon: 'swap' },
-	{ href: '/car-installment/', name: '자동차 할부 계산기', desc: '선수금·금리·기간별 월 납입금과 총 이자', icon: 'car' },
-	{ href: '/invest/', name: '적립식·거치식 투자 계산기', desc: 'S&P 500·나스닥 100 과거 10년 재현, 목표 금액 월 적립액', icon: 'chart' },
-	{ href: '/dsr/', name: 'DSR 계산기', desc: '소득 대비 원리금 비율과 규제 한도 내 최대 대출액', icon: 'pie' },
+	{ href: '/invest/', name: '적립식·거치식 투자 계산기', desc: 'S&P 500·나스닥 100 과거 10년 재현, 목표 금액 월 적립액', icon: 'chart', group: 'grow' },
+	{ href: '/car-installment/', name: '자동차 할부 계산기', desc: '선수금·금리·기간별 월 납입금과 총 이자', icon: 'car', group: 'grow' },
+	{ href: '/loan/', name: '대출 상환 계산기', desc: '원리금균등·원금균등·만기일시 월 상환액과 총 이자 비교', icon: 'loan', group: 'loan' },
+	{ href: '/dsr/', name: 'DSR 계산기', desc: '소득 대비 원리금 비율과 규제 한도 내 최대 대출액', icon: 'pie', group: 'loan' },
+	{ href: '/jeonse-loan/', name: '전세대출 이자 계산기', desc: '보증금과 대출 비율로 매달 내는 이자와 보증료 계산', icon: 'house', group: 'loan' },
+	{ href: '/brokerage-fee/', name: '중개보수(복비) 계산기', desc: '매매·전세·월세 법정 상한 요율과 한도로 계산', icon: 'receipt', group: 'home' },
+	{ href: '/rent-conversion/', name: '전월세 전환 계산기', desc: '보증금 ↔ 월세 바꿀 때 금액과 법정 상한 전환율', icon: 'swap', group: 'home' },
 ];
 
 export const PAGES = [

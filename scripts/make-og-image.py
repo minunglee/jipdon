@@ -37,11 +37,11 @@ d.text((x0 + s + 32 * S, y0 + s / 2), '집돈 ', font=bold(64), fill=text, ancho
 w = d.textlength('집돈 ', font=bold(64))
 d.text((x0 + s + 32 * S + w, y0 + s / 2), '계산기', font=bold(64), fill=brand, anchor='lm')
 
-d.text((80 * S, 290 * S), '집·대출·차, 큰돈 드는 계산을 정확하게', font=bold(52), fill=text, anchor='ls')
+d.text((80 * S, 290 * S), '집·대출·차·투자, 큰돈 계산을 정확하게', font=bold(52), fill=text, anchor='ls')
 d.text((80 * S, 352 * S), '계산식과 법령 근거까지 함께 보여주는 무료 계산기', font=reg(32), fill=soft, anchor='ls')
 
 # 계산기 칩
-chips = ['대출 상환', '전세대출 이자', '중개보수', '전월세 전환', '자동차 할부', '투자', 'DSR']
+chips = ['적립식 투자', '자동차 할부', '대출 상환', 'DSR', '전세대출 이자', '중개보수', '전월세 전환']
 x, y = 80 * S, 430 * S
 for label in chips:
     tw = d.textlength(label, font=bold(28))
