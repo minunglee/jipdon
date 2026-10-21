@@ -240,8 +240,17 @@ import Related from '../../components/Related.astro';
 					return option;
 				}),
 			);
-			sidoSelect.value = '서울';
-			fillRegions('서울', '11440');
+			// 동네 순위 등에서 ?region=코드&kind=종류&q=동 으로 들어오면 그 조건으로 바로 검색한다
+			const params = new URLSearchParams(location.search);
+			const linked = allRegions.find((r) => r.code === params.get('region'));
+			const start = linked ?? allRegions.find((r) => r.code === '11440')!;
+			sidoSelect.value = start.sido;
+			fillRegions(start.sido, start.code);
+			const kind = params.get('kind');
+			const kindInput = form.querySelector<HTMLInputElement>(`input[name="kind"][value="${kind}"]`);
+			if (kindInput && kind !== 'DETACHED') kindInput.checked = true;
+			const q = params.get('q');
+			if (q) (document.getElementById('q') as HTMLInputElement).value = q.slice(0, 30);
 			search();
 		} catch (e) {
 			sidoSelect.replaceChildren(el('option', '불러오지 못함'));
