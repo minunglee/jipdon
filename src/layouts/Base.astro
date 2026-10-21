@@ -132,6 +132,10 @@ if (tool) {
 			</div>
 		</footer>
 		<script is:inline>
+			// 방문 통계: 이 페이지 경로와 어디서 왔는지만 보낸다 (쿠키 없음, 운영 주소에서만)
+			if (location.hostname === 'jipdon.com' && navigator.sendBeacon) {
+				navigator.sendBeacon('/api/pv', new Blob([JSON.stringify({ path: location.pathname, ref: document.referrer })], { type: 'application/json' }));
+			}
 			document.getElementById('theme-toggle').addEventListener('click', () => {
 				const root = document.documentElement;
 				const dark = root.dataset.theme !== 'dark';
