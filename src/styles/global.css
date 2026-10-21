@@ -44,6 +44,11 @@
 	box-sizing: border-box;
 }
 
+/* hidden 속성은 display를 지정한 클래스(.building-list 등)보다 항상 이기게 한다 */
+[hidden] {
+	display: none !important;
+}
+
 body {
 	margin: 0;
 	background: var(--bg);
@@ -489,6 +494,16 @@ details > summary {
 
 .segmented.two {
 	grid-template-columns: repeat(2, 1fr);
+}
+
+.segmented.four {
+	grid-template-columns: repeat(4, 1fr);
+}
+
+@media (max-width: 560px) {
+	.segmented.four {
+		grid-template-columns: repeat(2, 1fr);
+	}
 }
 
 /* 전세 위험 확인 */

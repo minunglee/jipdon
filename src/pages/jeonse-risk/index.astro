@@ -5,10 +5,10 @@ import Related from '../../components/Related.astro';
 
 <Base
 	title="전세 위험 확인 (전세가율·깡통전세)"
-	description="국토교통부 실거래가로 아파트·빌라의 최근 매매가와 전세가를 비교해 전세가율과 깡통전세 위험 신호를 확인합니다. 수도권 83개 시군구."
+	description="국토교통부 실거래가로 아파트·빌라·오피스텔의 최근 매매가와 전세가를 비교해 전세가율과 깡통전세 위험 신호를 확인합니다. 단독·다가구는 동네 시세와 보증금 안전 계산. 수도권 83개 시군구."
 >
 	<h1>전세 위험 확인</h1>
-	<p class="lead">계약하려는 아파트·빌라의 <strong>최근 실거래 매매가와 전세가</strong>를 비교해 전세가율을 보여드립니다. 전세가율이 높을수록 집값이 조금만 내려도 보증금을 돌려받기 어려워집니다.</p>
+	<p class="lead">계약하려는 아파트·빌라·오피스텔의 <strong>최근 실거래 매매가와 전세가</strong>를 비교해 전세가율을 보여드립니다. 전세가율이 높을수록 집값이 조금만 내려도 보증금을 돌려받기 어려워집니다.</p>
 
 	<form id="search-form" class="card form" novalidate>
 		<div class="field">
@@ -20,23 +20,86 @@ import Related from '../../components/Related.astro';
 
 		<fieldset class="field" style="border: 0; padding: 0; margin: 0">
 			<legend style="font-weight: 600; margin-bottom: 6px">주택 종류</legend>
-			<div class="segmented two">
+			<div class="segmented four">
 				<input type="radio" id="k-apt" name="kind" value="APT" checked />
 				<label for="k-apt">아파트</label>
 				<input type="radio" id="k-rh" name="kind" value="RH" />
 				<label for="k-rh">빌라 (연립·다세대)</label>
+				<input type="radio" id="k-offi" name="kind" value="OFFI" />
+				<label for="k-offi">오피스텔</label>
+				<input type="radio" id="k-sh" name="kind" value="DETACHED" />
+				<label for="k-sh">단독·다가구</label>
 			</div>
 		</fieldset>
 
-		<div class="field">
+		<div class="field" data-mode="building">
 			<label for="q">건물 이름 또는 동</label>
 			<input id="q" name="q" autocomplete="off" maxlength="30" placeholder="예: 래미안, 망원동" />
 			<p class="hint">비워 두면 이 지역에서 최근 거래가 많은 건물을 보여줍니다.</p>
 		</div>
 
+		<fieldset class="field" data-mode="detached" style="border: 0; padding: 0; margin: 0" hidden>
+			<legend style="font-weight: 600; margin-bottom: 6px">유형</legend>
+			<div class="segmented two">
+				<input type="radio" id="t-dagagu" name="detachedType" value="다가구" checked />
+				<label for="t-dagagu">다가구</label>
+				<input type="radio" id="t-dandok" name="detachedType" value="단독" />
+				<label for="t-dandok">단독</label>
+			</div>
+			<p class="hint">단독·다가구 실거래 자료는 개인정보 보호로 지번이 가려져 있어 건물별 전세가율을 낼 수 없습니다. 대신 동네 시세를 보여드립니다.</p>
+		</fieldset>
+
 		<p id="search-error" class="error" role="alert" hidden></p>
-		<ul id="results" class="building-list" aria-live="polite"></ul>
+		<ul id="results" class="building-list" data-mode="building" aria-live="polite"></ul>
 	</form>
+
+	<section id="detached" data-mode="detached" aria-live="polite" hidden>
+		<h2 id="d-title">동네 시세</h2>
+		<p class="muted" id="d-note" style="margin-top: 0"></p>
+		<div class="card table-wrap">
+			<table>
+				<thead>
+					<tr><th>동</th><th>전세 보증금 (중간 50% 범위)</th><th>전세 중간값</th><th>계약 면적</th><th>매매 중간값</th><th>건물 연면적</th></tr>
+				</thead>
+				<tbody id="d-rows"></tbody>
+			</table>
+		</div>
+
+		<div class="card form" style="margin-top: 20px">
+			<h3 style="margin: 0">다가구 보증금 안전 계산</h3>
+			<p class="muted" style="margin: 0">다가구는 한 건물에 여러 세입자가 살아, 나보다 먼저 들어온 세입자의 보증금과 대출이 모두 내 보증금보다 앞섭니다. 계약 전에 임대인·중개사에게 아래 금액을 확인해 넣어 보세요.</p>
+			<div class="field">
+				<label for="sh-value">건물 시세 (매매가 추정)</label>
+				<div class="input-row"><input id="sh-value" inputmode="numeric" autocomplete="off" placeholder="예: 1,300,000,000" data-money data-hint="sh-value-hint" /><span class="unit">원</span></div>
+				<p class="hint" id="sh-value-hint"></p>
+			</div>
+			<div class="field">
+				<label for="sh-mortgage">근저당 채권최고액 (등기부 을구)</label>
+				<div class="input-row"><input id="sh-mortgage" inputmode="numeric" autocomplete="off" value="0" data-money data-hint="sh-mortgage-hint" /><span class="unit">원</span></div>
+				<p class="hint" id="sh-mortgage-hint"></p>
+			</div>
+			<div class="field">
+				<label for="sh-prior">나보다 먼저 들어온 세입자 보증금 합계</label>
+				<div class="input-row"><input id="sh-prior" inputmode="numeric" autocomplete="off" value="0" data-money data-hint="sh-prior-hint" /><span class="unit">원</span></div>
+				<p class="hint" id="sh-prior-hint"></p>
+			</div>
+			<div class="field">
+				<label for="sh-mine">내 보증금</label>
+				<div class="input-row"><input id="sh-mine" inputmode="numeric" autocomplete="off" placeholder="예: 150,000,000" data-money data-hint="sh-mine-hint" /><span class="unit">원</span></div>
+				<p class="hint" id="sh-mine-hint"></p>
+			</div>
+			<div id="sh-result" class="result-box" style="margin: 0" hidden></div>
+		</div>
+
+		<h3>다가구 계약 전 확인할 것</h3>
+		<ul>
+			<li><strong>선순위 보증금</strong>: 임대인 동의를 받아 주민센터에서 <strong>확정일자 부여 현황</strong>을, 전입세대 열람 내역을 함께 확인하면 먼저 들어온 세입자와 보증금을 알 수 있습니다.</li>
+			<li><strong>등기부등본</strong>: 근저당(채권최고액), 압류·가압류가 있는지 확인하세요.</li>
+			<li><strong>시세</strong>: 아래 동네 매매가는 건물 크기가 제각각이라 참고만 하세요. 감정평가액이나 공시가격도 함께 확인하는 것이 좋습니다.</li>
+			<li><strong>전세보증금 반환보증</strong> 가입이 가능한지 미리 확인하세요. 다가구는 선순위 보증금 때문에 거절되는 경우가 많습니다.</li>
+		</ul>
+		<p class="muted" id="d-info" style="font-size: 0.85rem"></p>
+	</section>
 
 	<section id="analysis" aria-live="polite" hidden>
 		<div class="building-head">
@@ -89,7 +152,8 @@ import Related from '../../components/Related.astro';
 		<h2>알아두면 좋은 점</h2>
 		<ul>
 			<li>실거래 신고는 계약 후 30일 안에 하므로 최근 한 달 거래는 아직 덜 들어와 있을 수 있습니다.</li>
-			<li>현재 수도권(서울·인천·경기) 아파트와 연립·다세대 빌라를 지원합니다. 단독·다가구 주택과 오피스텔은 아직 지원하지 않습니다.</li>
+			<li>현재 수도권(서울·인천·경기)의 아파트, 연립·다세대 빌라, 오피스텔은 건물별로, 단독·다가구는 동 단위로 지원합니다.</li>
+			<li><strong>오피스텔</strong>은 매매가가 잘 오르지 않아 전세가율이 높게 나오는 경우가 많습니다. 높은 전세가율 자체가 위험 신호이니 더 꼼꼼히 확인하세요.</li>
 			<li>같은 건물이라도 층·향·내부 상태에 따라 시세가 다릅니다.</li>
 			<li><strong>공공임대(장기전세 등)</strong>가 섞인 단지는 보증금이 시세보다 크게 낮아 전세가율이 실제보다 낮게 나올 수 있습니다. 근거 거래의 금액이 들쭉날쭉하면 이런 경우인지 확인하세요.</li>
 			<li>매매 거래가 1~2건뿐이면 그 거래가 시세를 대표하지 못할 수 있습니다. 건수를 함께 보세요.</li>
@@ -108,7 +172,7 @@ import Related from '../../components/Related.astro';
 	type Level = 'SAFE' | 'CAUTION' | 'WARNING' | 'UNKNOWN';
 	interface Region { code: string; sido: string; name: string }
 	interface Building {
-		id: number; kind: 'APT' | 'RH'; regionName: string; umd: string; jibun: string; name: string;
+		id: number; kind: 'APT' | 'RH' | 'OFFI'; regionName: string; umd: string; jibun: string; name: string;
 		houseType?: string; buildYear?: number; saleCount: number; jeonseCount: number;
 	}
 	interface Deal { area: number; date: string; amount: number; floor?: number }
@@ -175,7 +239,88 @@ import Related from '../../components/Related.astro';
 		searchError.textContent = message ?? '';
 	}
 
+	interface Dong {
+		umd: string; jeonseCount: number; jeonseP25?: number; jeonseMedian?: number; jeonseP75?: number;
+		jeonseAreaMedian?: number; saleCount: number; saleMedian?: number; saleAreaMedian?: number;
+	}
+	interface DetachedSummary { regionName: string; houseType: string; months: number; baseDate: string; lastCollectedAt?: string; dongs: Dong[] }
+
+	const isDetached = () => new FormData(form).get('kind') === 'DETACHED';
+
+	/** 아파트·빌라·오피스텔은 건물 검색, 단독·다가구는 동네 시세 화면 */
+	function updateMode() {
+		const detached = isDetached();
+		for (const node of document.querySelectorAll<HTMLElement>('[data-mode]')) {
+			node.hidden = (node.dataset.mode === 'detached') !== detached;
+		}
+		if (detached) analysisBox.hidden = true;
+	}
+
+	async function loadDetached() {
+		const data = new FormData(form);
+		const region = String(data.get('region') ?? '');
+		if (!region) return;
+		const seq = ++searchSeq;
+		const params = new URLSearchParams({ region, type: String(data.get('detachedType')) });
+		try {
+			const summary = await api<DetachedSummary>(`/api/detached?${params}`);
+			if (seq !== searchSeq) return;
+			showSearchError(null);
+			document.getElementById('d-title')!.textContent = `${summary.regionName} ${summary.houseType} 동네 시세`;
+			document.getElementById('d-note')!.textContent =
+				`최근 ${summary.months}개월 실거래. 전세는 월세 0원 계약만, 범위는 가운데 50%(하위 25%~상위 25% 제외)입니다.`;
+			const range = (d: Dong) => (d.jeonseP25 != null && d.jeonseP75 != null ? `${won(d.jeonseP25)} ~ ${won(d.jeonseP75)}` : '-');
+			const withCount = (value: string, count: number) => (count > 0 ? `${value} (${count}건)` : '거래 없음');
+			document.getElementById('d-rows')!.replaceChildren(
+				...(summary.dongs.length === 0
+					? [(() => { const tr = el('tr'); const td = el('td', '최근 거래가 없습니다.', 'muted'); td.colSpan = 6; tr.append(td); return tr; })()]
+					: summary.dongs.map((d) => {
+							const tr = el('tr');
+							tr.append(
+								el('td', d.umd),
+								el('td', range(d)),
+								el('td', withCount(d.jeonseMedian != null ? won(d.jeonseMedian) : '-', d.jeonseCount)),
+								el('td', d.jeonseAreaMedian != null ? `${d.jeonseAreaMedian}㎡` : '-'),
+								el('td', withCount(d.saleMedian != null ? won(d.saleMedian) : '-', d.saleCount)),
+								el('td', d.saleAreaMedian != null ? `${d.saleAreaMedian}㎡` : '-'),
+							);
+							return tr;
+						})),
+			);
+			const collected = summary.lastCollectedAt ? new Date(summary.lastCollectedAt).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' }) : '-';
+			document.getElementById('d-info')!.textContent = `기준일 ${summary.baseDate} · 실거래가 마지막 갱신 ${collected} · 출처: 국토교통부 실거래가 공개시스템`;
+		} catch (e) {
+			if (seq === searchSeq) showSearchError((e as Error).message);
+		}
+	}
+
+	/** 다가구: (근저당 + 선순위 보증금 + 내 보증금) ÷ 건물 시세 */
+	function renderShRisk() {
+		const value = parseNumber((document.getElementById('sh-value') as HTMLInputElement).value);
+		const mortgage = parseNumber((document.getElementById('sh-mortgage') as HTMLInputElement).value) || 0;
+		const prior = parseNumber((document.getElementById('sh-prior') as HTMLInputElement).value) || 0;
+		const mine = parseNumber((document.getElementById('sh-mine') as HTMLInputElement).value);
+		const box = document.getElementById('sh-result')!;
+		if (!(value > 0) || !(mine > 0)) {
+			box.hidden = true;
+			return;
+		}
+		const total = mortgage + prior + mine;
+		const ratio = (total / value) * 100;
+		const level: Level = ratio >= 80 ? 'WARNING' : ratio >= 70 ? 'CAUTION' : 'SAFE';
+		box.hidden = false;
+		box.className = `result-box level-${level.toLowerCase()}`;
+		box.replaceChildren(
+			el('strong', `건물 시세 대비 ${ratio.toFixed(1)}% · ${LEVEL_TEXT[level]}`),
+			el('p', `근저당 ${formatKoreanUnit(mortgage)} + 선순위 보증금 ${formatKoreanUnit(prior)} + 내 보증금 ${formatKoreanUnit(mine)} = ${formatKoreanUnit(total)}. 건물이 경매로 넘어가 시세의 ${Math.max(0, 100 - ratio).toFixed(0)}% 넘게 낮은 값에 팔리면 내 보증금을 다 돌려받지 못할 수 있습니다. 경매는 보통 시세보다 낮게 낙찰되니 여유를 크게 두세요.`),
+		);
+	}
+
 	async function search() {
+		if (isDetached()) {
+			loadDetached();
+			return;
+		}
 		const data = new FormData(form);
 		const region = String(data.get('region') ?? '');
 		if (!region) return;
@@ -305,7 +450,14 @@ import Related from '../../components/Related.astro';
 	bindMoneyInputs();
 	form.addEventListener('submit', (e) => e.preventDefault());
 	regionSelect.addEventListener('change', search);
-	for (const radio of form.querySelectorAll('input[name="kind"]')) radio.addEventListener('change', search);
+	for (const radio of form.querySelectorAll('input[name="kind"]')) {
+		radio.addEventListener('change', () => {
+			updateMode();
+			search();
+		});
+	}
+	for (const radio of form.querySelectorAll('input[name="detachedType"]')) radio.addEventListener('change', loadDetached);
+	for (const id of ['sh-value', 'sh-mortgage', 'sh-prior', 'sh-mine']) document.getElementById(id)!.addEventListener('input', renderShRisk);
 	document.getElementById('q')!.addEventListener('input', () => {
 		clearTimeout(searchTimer);
 		searchTimer = window.setTimeout(search, 300);

@@ -25,7 +25,7 @@ export const TOOLS: Tool[] = [
 	{ href: '/loan/', name: '대출 상환 계산기', desc: '원리금균등·원금균등·만기일시 월 상환액과 총 이자 비교', icon: 'loan', group: 'loan' },
 	{ href: '/dsr/', name: 'DSR 계산기', desc: '소득 대비 원리금 비율과 규제 한도 내 최대 대출액', icon: 'pie', group: 'loan' },
 	{ href: '/jeonse-loan/', name: '전세대출 이자 계산기', desc: '보증금과 대출 비율로 매달 내는 이자와 보증료 계산', icon: 'house', group: 'loan' },
-	{ href: '/jeonse-risk/', name: '전세 위험 확인 (전세가율)', desc: '실거래가로 건물별 전세가율과 깡통전세 위험 신호 확인', icon: 'shield', group: 'home' },
+	{ href: '/jeonse-risk/', name: '전세 위험 확인 (전세가율)', desc: '아파트·빌라·오피스텔 건물별 전세가율, 단독·다가구 동네 시세와 보증금 안전 계산', icon: 'shield', group: 'home' },
 	{ href: '/brokerage-fee/', name: '중개보수(복비) 계산기', desc: '매매·전세·월세 법정 상한 요율과 한도로 계산', icon: 'receipt', group: 'home' },
 	{ href: '/rent-conversion/', name: '전월세 전환 계산기', desc: '보증금 ↔ 월세 바꿀 때 금액과 법정 상한 전환율', icon: 'swap', group: 'home' },
 ];
