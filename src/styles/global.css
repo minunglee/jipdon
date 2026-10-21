@@ -610,6 +610,28 @@ details > summary {
 	color: var(--error);
 }
 
+/* 동네 순위 표: 전세가율 칸을 구간 색으로 */
+.rank-table td:nth-child(2) a {
+	font-weight: 600;
+	text-decoration: none;
+}
+
+.rank-table .rank-ratio {
+	font-weight: 800;
+}
+
+.rank-table tr.level-warning .rank-ratio {
+	color: var(--error);
+}
+
+.rank-table tr.level-caution .rank-ratio {
+	color: var(--accent);
+}
+
+.rank-table tr.level-safe .rank-ratio {
+	color: var(--brand);
+}
+
 /* 정책 문서 */
 .doc h2 {
 	margin-top: 36px;
