@@ -133,9 +133,30 @@ if (tool) {
 		</footer>
 		<script is:inline>
 			// 방문 통계: 이 페이지 경로와 어디서 왔는지만 보낸다 (쿠키 없음, 운영 주소에서만)
-			if (location.hostname === 'jipdon.com' && navigator.sendBeacon) {
-				navigator.sendBeacon('/api/pv', new Blob([JSON.stringify({ path: location.pathname, ref: document.referrer })], { type: 'application/json' }));
-			}
+			// 운영자 본인은 ?stats=off 로 한 번 열면 이 브라우저를 통계에서 뺀다 (?stats=on 으로 되돌림)
+			(() => {
+				const KEY = 'jipdon:no-stats';
+				const params = new URLSearchParams(location.search);
+				const toggle = params.get('stats');
+				let optedOut = false;
+				try {
+					if (toggle === 'off') localStorage.setItem(KEY, '1');
+					if (toggle === 'on') localStorage.removeItem(KEY);
+					optedOut = localStorage.getItem(KEY) === '1';
+				} catch {}
+				if (toggle === 'off' || toggle === 'on') {
+					params.delete('stats');
+					history.replaceState(null, '', location.pathname + (params.size ? '?' + params : '') + location.hash);
+					const note = document.createElement('p');
+					note.className = 'stats-note';
+					note.textContent = toggle === 'off' ? '이 브라우저는 방문 통계에서 빠졌습니다.' : '이 브라우저를 다시 방문 통계에 넣었습니다.';
+					document.body.append(note);
+					setTimeout(() => note.remove(), 4000);
+				}
+				if (!optedOut && location.hostname === 'jipdon.com' && navigator.sendBeacon) {
+					navigator.sendBeacon('/api/pv', new Blob([JSON.stringify({ path: location.pathname, ref: document.referrer })], { type: 'application/json' }));
+				}
+			})();
 			document.getElementById('theme-toggle').addEventListener('click', () => {
 				const root = document.documentElement;
 				const dark = root.dataset.theme !== 'dark';
