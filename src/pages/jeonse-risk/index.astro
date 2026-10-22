@@ -1,5 +1,6 @@
 ---
 import Base from '../../layouts/Base.astro';
+import DataAsOf from '../../components/DataAsOf.astro';
 import Related from '../../components/Related.astro';
 ---
 
@@ -9,6 +10,7 @@ import Related from '../../components/Related.astro';
 >
 	<h1>전세 위험 확인</h1>
 	<p class="lead">계약하려는 아파트·빌라·오피스텔의 <strong>최근 실거래 매매가와 전세가</strong>를 비교해 전세가율을 보여드립니다. 전세가율이 높을수록 집값이 조금만 내려도 보증금을 돌려받기 어려워집니다.</p>
+	<DataAsOf />
 
 	<form id="search-form" class="card form" novalidate>
 		<div class="field">
