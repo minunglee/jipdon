@@ -1,5 +1,6 @@
 ---
 import Base from '../../layouts/Base.astro';
+import DataAsOf from '../../components/DataAsOf.astro';
 import Related from '../../components/Related.astro';
 ---
 
@@ -9,6 +10,7 @@ import Related from '../../components/Related.astro';
 >
 	<h1>전세가율 높은 동네 순위</h1>
 	<p class="lead">최근 12개월 실거래로 계산한 <strong>매매가 대비 전세가 비율</strong>이 높은 동네입니다. 전세가율이 높을수록 집값이 조금만 내려도 보증금을 돌려받기 어려워질 수 있습니다.</p>
+	<DataAsOf />
 
 	<form id="rank-form" class="card form" novalidate>
 		<fieldset class="field" style="border: 0; padding: 0; margin: 0">

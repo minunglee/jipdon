@@ -1,0 +1,35 @@
+---
+/** 실거래 데이터가 언제 갱신됐는지 한 줄로 보여준다. API가 응답하지 않으면 아무것도 보이지 않는다. */
+---
+
+<p class="data-asof" data-asof hidden></p>
+
+<script>
+	interface Status { lastCollectedAt?: string; saleDeals: number; rentDeals: number; regions: number }
+
+	const API_BASE = import.meta.env.DEV ? 'http://localhost:8090' : '';
+	const man = (n: number) => `${Math.round(n / 10_000).toLocaleString('ko-KR')}만`;
+
+	const box = document.querySelector<HTMLElement>('[data-asof]');
+	if (box) {
+		fetch(API_BASE + '/api/status', { headers: { Accept: 'application/json' } })
+			.then((res) => (res.ok ? (res.json() as Promise<Status>) : null))
+			.then((s) => {
+				if (!s?.lastCollectedAt) return;
+				const at = new Date(s.lastCollectedAt).toLocaleString('ko-KR', {
+					timeZone: 'Asia/Seoul', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false,
+				});
+				box.textContent = `실거래 데이터 ${at} 갱신 · 전국 ${s.regions}개 시군구 · 매매 ${man(s.saleDeals)}건, 전월세 ${man(s.rentDeals)}건`;
+				box.hidden = false;
+			})
+			.catch(() => {});
+	}
+</script>
+
+<style>
+	.data-asof {
+		margin: -20px 0 24px;
+		color: var(--muted);
+		font-size: 0.85rem;
+	}
+</style>
