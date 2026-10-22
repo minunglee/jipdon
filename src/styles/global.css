@@ -684,6 +684,21 @@ details > summary {
 	color: var(--brand);
 }
 
+/* 통계 제외 안내 (잠깐 보였다 사라짐) */
+.stats-note {
+	position: fixed;
+	left: 50%;
+	bottom: 20px;
+	z-index: 10;
+	margin: 0;
+	padding: 10px 16px;
+	background: var(--brand-strong);
+	color: var(--on-brand);
+	border-radius: 999px;
+	font-weight: 700;
+	transform: translateX(-50%);
+}
+
 /* 정책 문서 */
 .doc h2 {
 	margin-top: 36px;
