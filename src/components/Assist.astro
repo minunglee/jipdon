@@ -1,0 +1,173 @@
+---
+/** "무엇을 계산할까요?" AI 안내. 질문을 받아 알맞은 계산기와 미리 채운 입력값 링크를 보여준다. */
+const EXAMPLES = ['전세 4억에 대출 80% 받으면 이자가 얼마예요?', '연봉 6천인데 주담대 얼마까지 돼요?', '5년 뒤 1억 모으려면 한 달에 얼마?'];
+---
+
+<section class="assist" aria-labelledby="assist-title">
+	<h2 id="assist-title">무엇을 계산할지 물어보세요</h2>
+	<form id="assist-form" class="assist-row">
+		<input id="assist-q" name="question" maxlength="200" autocomplete="off" placeholder="예: 전세 4억에 대출 80% 받으면 이자가 얼마예요?" aria-label="질문" />
+		<button type="submit" class="button-primary">물어보기</button>
+	</form>
+	<div class="assist-examples">
+		{EXAMPLES.map((example) => <button type="button" class="assist-example">{example}</button>)}
+	</div>
+	<div id="assist-result" class="assist-result" role="status" aria-live="polite" hidden>
+		<p id="assist-text"></p>
+		<ul id="assist-filled"></ul>
+		<a id="assist-link" class="button-primary" hidden></a>
+	</div>
+	<p class="assist-note">AI가 알맞은 계산기를 골라 값을 채워 드립니다. 계산은 계산기가 하며, 질문은 안내에만 쓰고 저장하지 않습니다. 개인정보는 적지 마세요.</p>
+</section>
+
+<script>
+	const API_BASE = import.meta.env.DEV ? 'http://localhost:8090' : '';
+
+	interface Answer {
+		relevant: boolean;
+		text: string;
+		link?: { href: string; name: string; filled: { label: string; value: string }[] };
+	}
+
+	const form = document.getElementById('assist-form') as HTMLFormElement;
+	const input = document.getElementById('assist-q') as HTMLInputElement;
+	const button = form.querySelector('button')!;
+	const result = document.getElementById('assist-result')!;
+	const text = document.getElementById('assist-text')!;
+	const filled = document.getElementById('assist-filled')!;
+	const link = document.getElementById('assist-link') as HTMLAnchorElement;
+
+	function show(message: string, answer?: Answer) {
+		result.hidden = false;
+		text.textContent = message;
+		filled.replaceChildren(
+			...(answer?.link?.filled ?? []).map((item) => {
+				const li = document.createElement('li');
+				li.textContent = `${item.label}: ${item.value}`;
+				return li;
+			}),
+		);
+		if (answer?.link) {
+			link.href = answer.link.href;
+			link.textContent = `${answer.link.name} 열기 →`;
+			link.hidden = false;
+		} else {
+			link.hidden = true;
+		}
+	}
+
+	async function ask(question: string) {
+		button.disabled = true;
+		show('알맞은 계산기를 찾고 있어요…');
+		try {
+			const res = await fetch(API_BASE + '/api/assist', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+				body: JSON.stringify({ question }),
+			});
+			const body = await res.json().catch(() => ({}));
+			if (!res.ok) {
+				show(body.detail ?? 'AI 안내를 잠시 사용할 수 없어요. 아래 계산기 목록에서 골라 주세요.');
+				return;
+			}
+			show(body.text, body as Answer);
+		} catch {
+			show('AI 안내를 잠시 사용할 수 없어요. 아래 계산기 목록에서 골라 주세요.');
+		} finally {
+			button.disabled = false;
+		}
+	}
+
+	form.addEventListener('submit', (event) => {
+		event.preventDefault();
+		const question = input.value.trim();
+		if (question) ask(question);
+	});
+	for (const example of document.querySelectorAll<HTMLButtonElement>('.assist-example')) {
+		example.addEventListener('click', () => {
+			input.value = example.textContent ?? '';
+			ask(input.value);
+		});
+	}
+</script>
+
+<style>
+	.assist {
+		margin: 0 0 32px;
+		padding: 24px;
+		background: var(--surface);
+		border: 1px solid var(--border);
+		border-radius: var(--radius);
+	}
+
+	.assist h2 {
+		margin: 0 0 12px;
+		font-size: 1.15rem;
+	}
+
+	.assist-row {
+		display: flex;
+		gap: 8px;
+	}
+
+	.assist-row button {
+		flex-shrink: 0;
+	}
+
+	.assist-examples {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 6px;
+		margin-top: 10px;
+	}
+
+	.assist-example {
+		padding: 6px 10px;
+		background: var(--brand-tint);
+		color: var(--text-soft);
+		border: 1px solid var(--border);
+		border-radius: 999px;
+		font: inherit;
+		font-size: 0.85rem;
+		cursor: pointer;
+	}
+
+	.assist-result {
+		margin-top: 16px;
+		padding: 16px;
+		background: var(--brand-tint);
+		border-radius: 10px;
+	}
+
+	.assist-result p {
+		margin: 0;
+	}
+
+	.assist-result ul {
+		margin: 8px 0 0;
+		padding-left: 18px;
+		color: var(--text-soft);
+	}
+
+	.assist-result ul:empty {
+		display: none;
+	}
+
+	.assist-result a {
+		display: inline-block;
+		margin-top: 12px;
+		text-decoration: none;
+	}
+
+	.assist-note {
+		margin: 12px 0 0;
+		color: var(--muted);
+		font-size: 0.8rem;
+	}
+
+	@media (max-width: 520px) {
+		.assist-row {
+			flex-direction: column;
+		}
+	}
+</style>
