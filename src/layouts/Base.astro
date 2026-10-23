@@ -166,6 +166,39 @@ if (tool) {
 					localStorage.setItem('theme', dark ? 'dark' : 'light');
 				} catch {}
 			});
+			// 미리 채우기: AI 안내가 만든 ?f.입력칸=값 주소로 열면 계산기에 값을 넣는다.
+			// 계산기 스크립트(모듈)가 입력 이벤트를 연결한 뒤에 넣어야 하므로 DOMContentLoaded를 기다린다
+			(() => {
+				const entries = [...new URLSearchParams(location.search)].filter(([key]) => key.startsWith('f.'));
+				if (!entries.length) return;
+				document.addEventListener('DOMContentLoaded', () => {
+					const fill = (radiosOnly) => {
+						let count = 0;
+						for (const [key, value] of entries) {
+							const name = key.slice(2);
+							const radio = document.querySelector(`input[type="radio"][name="${CSS.escape(name)}"][value="${CSS.escape(value)}"]`);
+							if (radiosOnly !== Boolean(radio)) continue;
+							const el = radio || document.getElementById(name);
+							if (!(el instanceof HTMLInputElement || el instanceof HTMLSelectElement)) continue;
+							if (radio) radio.checked = true;
+							else if (el.matches('[data-money]')) el.value = Number(value).toLocaleString('ko-KR');
+							else el.value = value;
+							el.dispatchEvent(new Event('input', { bubbles: true }));
+							el.dispatchEvent(new Event('change', { bubbles: true }));
+							count++;
+						}
+						return count;
+					};
+					// 라디오(거래 종류 등)를 먼저 골라야 그에 맞는 입력칸이 보인다
+					const count = fill(true) + fill(false);
+					if (!count) return;
+					const note = document.createElement('p');
+					note.className = 'stats-note';
+					note.textContent = 'AI 안내로 값을 채웠어요. 확인하고 고쳐 쓰세요.';
+					document.body.append(note);
+					setTimeout(() => note.remove(), 5000);
+				});
+			})();
 		</script>
 	</body>
 </html>
