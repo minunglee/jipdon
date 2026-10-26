@@ -4,6 +4,7 @@ import Base from '../layouts/Base.astro';
 import Assist from '../components/Assist.astro';
 import ToolCard from '../components/ToolCard.astro';
 import { TOOL_GROUPS, TOOLS } from '../data/tools';
+import { GUIDES, guideHref } from '../data/guides';
 ---
 
 <Base title="집·대출·차·투자, 큰돈 계산을 정확하게" description="적립식 투자, 자동차 할부, 대출 상환, DSR, 전세대출 이자, 중개보수, 전월세 전환까지. 계산식과 근거를 함께 보여주는 무료 계산기.">
@@ -43,6 +44,13 @@ import { TOOL_GROUPS, TOOLS } from '../data/tools';
 		}
 	</div>
 
+	<section class="tool-group">
+		<h2>집 계약 가이드 <small class="muted" style="font-weight: 400; font-size: 0.85rem">공인중개사가 정리</small></h2>
+		<ul class="home-guides">
+			{GUIDES.map((guide) => <li><a href={guideHref(guide)}>{guide.title}</a></li>)}
+		</ul>
+	</section>
+
 	<section class="explain">
 		<h2>이런 점이 다릅니다</h2>
 		<ul>
@@ -52,3 +60,30 @@ import { TOOL_GROUPS, TOOLS } from '../data/tools';
 		</ul>
 	</section>
 </Base>
+
+<style>
+	.home-guides {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+		gap: 8px;
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.home-guides a {
+		display: block;
+		height: 100%;
+		padding: 14px 16px;
+		background: var(--surface);
+		border: 1px solid var(--border);
+		border-radius: var(--radius);
+		color: var(--text);
+		font-weight: 600;
+		text-decoration: none;
+	}
+
+	.home-guides a:hover {
+		border-color: var(--brand);
+	}
+</style>

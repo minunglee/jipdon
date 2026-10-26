@@ -32,6 +32,7 @@ export const TOOLS: Tool[] = [
 ];
 
 export const PAGES = [
+	{ href: '/guide/', name: '집 계약 가이드' },
 	{ href: '/about/', name: '소개' },
 	{ href: '/privacy/', name: '개인정보처리방침' },
 	{ href: '/terms/', name: '이용약관' },

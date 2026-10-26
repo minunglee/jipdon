@@ -1,0 +1,157 @@
+---
+/**
+ * 가이드 글 공통 틀: 제목·작성자·기준일, 본문(slot), 출처, 관련 계산기, 다른 가이드, 고지.
+ * 검색엔진용 Article 구조화 데이터도 여기서 넣는다.
+ */
+import Base from '../layouts/Base.astro';
+import { GUIDES, GUIDES_CHECKED_AT, guideHref, type Guide } from '../data/guides';
+
+interface Props {
+	slug: string;
+	/** 글에서 인용한 법령·공식 자료 */
+	sources: { name: string; href: string }[];
+}
+
+const { slug, sources } = Astro.props;
+const guide = GUIDES.find((g) => g.slug === slug) as Guide;
+const others = GUIDES.filter((g) => g.slug !== slug);
+const checked = new Date(GUIDES_CHECKED_AT).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' });
+const article = {
+	'@context': 'https://schema.org',
+	'@type': 'Article',
+	headline: guide.title,
+	description: guide.desc,
+	inLanguage: 'ko-KR',
+	dateModified: GUIDES_CHECKED_AT,
+	author: { '@type': 'Organization', name: '집돈 계산기 (공인중개사 운영)', url: 'https://jipdon.com/about/' },
+	mainEntityOfPage: new URL(guideHref(guide), Astro.site).toString(),
+};
+---
+
+<Base title={guide.title} description={guide.desc}>
+	<script type="application/ld+json" set:html={JSON.stringify(article)} />
+	<article class="guide">
+		<p class="guide-crumb"><a href="/guide/">집 계약 가이드</a></p>
+		<h1>{guide.title}</h1>
+		<p class="guide-meta">작성: 집돈 운영자 (공인중개사) · 법령 기준일 {checked}</p>
+		<slot />
+
+		<section class="guide-tools">
+			<h2>집돈에서 바로 확인하기</h2>
+			<ul>
+				{guide.tools.map((tool) => <li><a href={tool.href}>{tool.name} →</a></li>)}
+			</ul>
+		</section>
+
+		<section class="guide-sources">
+			<h2>출처</h2>
+			<ul>
+				{sources.map((s) => <li><a href={s.href} rel="noopener" target="_blank">{s.name}</a></li>)}
+			</ul>
+		</section>
+
+		<p class="notice">이 글은 {checked} 기준 법령과 공개 자료로 작성한 일반 정보이며, 개별 계약에 대한 법률 자문이 아닙니다. 제도는 바뀔 수 있으니 계약 전에 출처의 최신 내용과 담당 기관을 꼭 확인하세요.</p>
+	</article>
+
+	<section class="related">
+		<h2>다른 가이드</h2>
+		<ul class="guide-list">
+			{others.map((g) => <li><a href={guideHref(g)}><strong>{g.title}</strong><span>{g.desc}</span></a></li>)}
+		</ul>
+	</section>
+</Base>
+
+<style is:global>
+	.guide {
+		max-width: 760px;
+	}
+
+	.guide h2 {
+		margin-top: 40px;
+	}
+
+	.guide p,
+	.guide li {
+		line-height: 1.75;
+		color: var(--text-soft);
+	}
+
+	.guide-crumb {
+		margin: 0 0 8px;
+		font-size: 0.9rem;
+	}
+
+	.guide-crumb a {
+		text-decoration: none;
+	}
+
+	.guide-meta {
+		margin: 0 0 24px;
+		color: var(--muted) !important;
+		font-size: 0.9rem;
+	}
+
+	.guide table {
+		width: 100%;
+		border-collapse: collapse;
+		margin: 12px 0;
+		font-size: 0.92rem;
+	}
+
+	.guide th,
+	.guide td {
+		padding: 8px 10px;
+		border: 1px solid var(--border);
+		text-align: left;
+		vertical-align: top;
+	}
+
+	.guide th {
+		background: var(--brand-tint);
+	}
+
+	.guide .table-scroll {
+		overflow-x: auto;
+	}
+
+	.guide .callout {
+		margin: 16px 0;
+		padding: 14px 16px;
+		background: var(--brand-tint);
+		border-left: 4px solid var(--brand);
+		border-radius: 8px;
+	}
+
+	.guide .callout p {
+		margin: 0;
+	}
+
+	.guide-tools ul,
+	.guide-sources ul {
+		padding-left: 18px;
+	}
+
+	.guide-list {
+		display: grid;
+		gap: 10px;
+		padding: 0;
+		list-style: none;
+	}
+
+	.guide-list a {
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+		padding: 16px;
+		background: var(--surface);
+		border: 1px solid var(--border);
+		border-radius: var(--radius);
+		color: var(--text);
+		text-decoration: none;
+	}
+
+	.guide-list span {
+		color: var(--muted);
+		font-size: 0.9rem;
+	}
+</style>
