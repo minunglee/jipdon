@@ -5,6 +5,7 @@
  */
 export type Kind = 'APT' | 'RH' | 'OFFI';
 
+/** 순위 페이지에 보여줄 주택 종류 (이 순서로 탭이 나온다) */
 export const KINDS: { kind: Kind; label: string }[] = [
 	{ kind: 'APT', label: '아파트' },
 	{ kind: 'RH', label: '빌라' },
@@ -31,15 +32,19 @@ export interface Ranking {
 	rows: RankingRow[];
 }
 
+/** 빌드할 때 순위를 받아올 서버 (기본은 운영 서버) */
 const API_BASE: string = import.meta.env.JIPDON_API_BASE ?? 'https://jipdon.com';
 /** Nginx가 /api/ 를 IP당 초당 5회로 제한하므로 빌드 중 요청 사이를 띄운다 */
 const GAP_MS = 300;
 
+/** 같은 지역·종류를 여러 페이지가 쓰면 한 번만 받는다 */
 const cache = new Map<string, Promise<Ranking>>();
 let queue: Promise<unknown> = Promise.resolve();
 
+/** ms만큼 기다린다 */
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+/** 순위 API 호출. 429(요청 많음)면 2초, 4초, 6초 기다렸다 최대 3번 더 시도, 그 밖의 실패는 빌드를 멈춘다 */
 async function request(path: string): Promise<Ranking> {
 	for (let attempt = 1; ; attempt++) {
 		const res = await fetch(API_BASE + path, { headers: { Accept: 'application/json' } });

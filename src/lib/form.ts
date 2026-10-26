@@ -39,6 +39,7 @@ export function showError(error: string | null, errorBox: HTMLElement, resultBox
 	return !error;
 }
 
+/** id로 찾은 요소의 글자를 바꾼다 (결과 표시용) */
 export function setText(id: string, text: string): void {
 	document.getElementById(id)!.textContent = text;
 }

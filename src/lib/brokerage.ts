@@ -9,7 +9,9 @@
 export type DealType = 'sale' | 'lease';
 export type PropertyType = 'house' | 'officetel' | 'other';
 
+/** 거래 종류의 화면 이름 */
 export const DEAL_LABELS: Record<DealType, string> = { sale: '매매·교환', lease: '전세·월세(임대차)' };
+/** 중개대상물 종류의 화면 이름 (주택 / 주거용 오피스텔 / 그 외) */
 export const PROPERTY_LABELS: Record<PropertyType, string> = {
 	house: '주택',
 	officetel: '주거용 오피스텔',
@@ -25,7 +27,9 @@ export interface Bracket {
 	label: string;
 }
 
+/** 1억 원 (요율 구간 경계를 읽기 쉽게 쓰려고) */
 const EOK = 100_000_000;
+/** 1만 원 */
 const MAN = 10_000;
 
 /** 주택 매매·교환 */
@@ -80,6 +84,7 @@ export interface BrokerageResult {
 	capped: boolean;
 }
 
+/** 입력 검사. 문제가 있으면 화면에 보여줄 문구, 없으면 null (금액은 0 이상 1조 원 이하) */
 export function validate(input: BrokerageInput): string | null {
 	const ok = (v: number) => Number.isFinite(v) && v >= 0 && v <= 10_000 * EOK;
 	if (input.deal === 'sale') {
@@ -99,6 +104,7 @@ export function leaseAmount(deposit: number, monthlyRent: number): { amount: num
 	return { amount: deposit + monthlyRent * 70, note: '보증금 + 월세 × 100이 5천만 원 미만이라 보증금 + 월세 × 70' };
 }
 
+/** 중개보수 상한 계산: 거래금액(월세는 ×100/×70 환산)에 종류별 상한요율을 곱하고, 구간 한도액이 있으면 그 금액을 넘지 않게 한다 */
 export function calculate(input: BrokerageInput): BrokerageResult {
 	const error = validate(input);
 	if (error) throw new Error(error);

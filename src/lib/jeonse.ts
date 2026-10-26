@@ -31,6 +31,7 @@ export interface JeonseResult {
 	totalCost: number;
 }
 
+/** 입력 검사 (대출 비율 0 초과 100% 이하, 금리 0~30%, 보증료율 0~5%) */
 export function validate(input: JeonseInput): string | null {
 	if (!Number.isFinite(input.deposit) || input.deposit <= 0) return '전세 보증금을 입력해주세요.';
 	if (input.deposit > 100_000_000_000) return '보증금은 1,000억 원 이하로 입력해주세요.';
@@ -41,6 +42,7 @@ export function validate(input: JeonseInput): string | null {
 	return null;
 }
 
+/** 전세대출: 보증금 × 대출 비율을 만기일시상환(매달 이자만)으로 보고 월 이자, 보증료, 기간 총비용, 내 돈을 계산 */
 export function calculate(input: JeonseInput): JeonseResult {
 	const error = validate(input);
 	if (error) throw new Error(error);
