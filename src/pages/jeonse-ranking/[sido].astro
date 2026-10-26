@@ -1,0 +1,19 @@
+---
+import Base from '../../layouts/Base.astro';
+import RankingView from '../../components/RankingView.astro';
+import { NATIONWIDE, SIDOS, type Sido } from '../../data/sidos';
+
+/** 서울은 /jeonse-ranking/ 에 있으므로 나머지 16개 시도와 전국만 만든다 */
+export function getStaticPaths() {
+	return [NATIONWIDE, ...SIDOS.filter((s) => s.slug !== 'seoul')].map((sido) => ({ params: { sido: sido.slug }, props: { sido } }));
+}
+
+const { sido } = Astro.props as { sido: Sido };
+---
+
+<Base
+	title={`${sido.label} 전세가율 높은 동네 순위 (아파트·빌라·오피스텔)`}
+	description={`국토교통부 실거래가로 계산한 ${sido.label} 동네별 전세가율 순위. 최근 12개월 매매가 대비 전세가가 높은 동네를 아파트·빌라·오피스텔별로 확인하세요. 매일 갱신.`}
+>
+	<RankingView sido={sido} />
+</Base>
