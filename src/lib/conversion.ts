@@ -30,6 +30,7 @@ export function impliedRate(depositDiff: number, rentDiff: number): number {
 	return round2(((rentDiff * 12) / depositDiff) * 100);
 }
 
+/** 소수 둘째 자리 반올림 (전환율 % 표시용) */
 function round2(value: number): number {
 	return Math.round(value * 100) / 100;
 }

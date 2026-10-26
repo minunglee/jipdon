@@ -37,6 +37,7 @@ export interface DsrResult {
 	maxNewLoan: number;
 }
 
+/** 입력 검사 (금리 0~30%, 스트레스 가산 0~10%p, 기간 1~50년, 한도 0~100%) */
 export function validate(input: DsrInput): string | null {
 	const money = (v: number) => Number.isFinite(v) && v >= 0 && v <= 100_000_000_000;
 	if (!money(input.annualIncome) || input.annualIncome <= 0) return '연 소득을 입력해주세요.';
@@ -57,6 +58,7 @@ export function annualRepayment(principal: number, ratePercent: number, months: 
 	return Math.round((loan.totalPayment * 12) / months);
 }
 
+/** DSR = (새 대출 연 원리금 + 기존 대출 연 원리금 + 전세대출 연 이자) ÷ 연소득. 새 대출 금리에는 스트레스 가산금리를 더하고, 한도 안 최대 대출액은 이분 탐색으로 찾는다 */
 export function calculate(input: DsrInput): DsrResult {
 	const error = validate(input);
 	if (error) throw new Error(error);

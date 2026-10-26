@@ -17,6 +17,7 @@ export interface CarResult {
 	loan: LoanResult;
 }
 
+/** 입력 검사 (선수금은 차량 가격보다 작아야, 금리 0~30%, 기간 1~120개월) */
 export function validate(input: CarInput): string | null {
 	if (!Number.isFinite(input.price) || input.price <= 0) return '차량 가격을 입력해주세요.';
 	if (input.price > 10_000_000_000) return '차량 가격은 100억 원 이하로 입력해주세요.';
@@ -27,6 +28,7 @@ export function validate(input: CarInput): string | null {
 	return null;
 }
 
+/** 자동차 할부: (차량 가격 − 선수금)을 원리금균등으로 갚는다고 보고 월 납입금·총 이자·총 비용(선수금 포함)을 계산 */
 export function calculate(input: CarInput): CarResult {
 	const error = validate(input);
 	if (error) throw new Error(error);

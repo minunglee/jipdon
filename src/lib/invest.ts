@@ -40,6 +40,7 @@ export interface InvestResult {
 	cagrPercent: number;
 }
 
+/** 입력 검사 (금액 0~1,000억, 기간 1~50년, 연 수익률 -100% 초과 100% 이하) */
 export function validate(input: InvestInput): string | null {
 	const money = (v: number) => Number.isFinite(v) && v >= 0 && v <= 100_000_000_000;
 	if (!money(input.initial) || !money(input.monthly)) return '금액을 올바르게 입력해주세요.';
@@ -49,10 +50,12 @@ export function validate(input: InvestInput): string | null {
 	return null;
 }
 
+/** 연 수익률을 월 복리 수익률로 ((1 + 연)^(1/12) − 1). 12번 곱하면 정확히 연 수익률이 된다 */
 export function monthlyRate(annualPercent: number): number {
 	return Math.pow(1 + annualPercent / 100, 1 / 12) - 1;
 }
 
+/** 적립식·거치식 시뮬레이션: 해마다 그해 수익률로 월 복리를 적용하며 매달 넣는다 (첫 달에 처음 금액). 연도별 평가액과 연평균 수익률(CAGR)을 돌려준다 */
 export function simulate(input: InvestInput): InvestResult {
 	const error = validate(input);
 	if (error) throw new Error(error);

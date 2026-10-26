@@ -8,6 +8,7 @@
 
 export type RepaymentMethod = 'equal-payment' | 'equal-principal' | 'bullet';
 
+/** 상환 방식의 화면 이름 */
 export const METHOD_LABELS: Record<RepaymentMethod, string> = {
 	'equal-payment': '원리금균등',
 	'equal-principal': '원금균등',
@@ -43,6 +44,7 @@ export interface LoanResult {
 	lastPayment: number;
 }
 
+/** 입력 검사 (대출금 1,000억 이하, 금리 0~30%, 기간 1~600개월) */
 export function validate(input: LoanInput): string | null {
 	if (!Number.isFinite(input.principal) || input.principal <= 0) return '대출금을 입력해주세요.';
 	if (input.principal > 100_000_000_000) return '대출금은 1,000억 원 이하로 입력해주세요.';
@@ -53,6 +55,7 @@ export function validate(input: LoanInput): string | null {
 	return null;
 }
 
+/** 대출 상환표: 매달 이자 = 남은 원금 × 월 금리. 방식에 따라 원금 상환액을 정하고, 반올림 자투리는 마지막 달에 정리해 잔액을 정확히 0으로 만든다 */
 export function calculate(input: LoanInput): LoanResult {
 	const error = validate(input);
 	if (error) throw new Error(error);
@@ -102,6 +105,7 @@ export function equalPayment(principal: number, monthlyRate: number, months: num
 	return Math.round((principal * monthlyRate * growth) / (growth - 1));
 }
 
+/** 합계 */
 function sum(values: number[]): number {
 	return values.reduce((acc, value) => acc + value, 0);
 }
