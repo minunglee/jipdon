@@ -163,6 +163,23 @@ a {
 .site-header nav a {
 	color: var(--text-soft);
 	text-decoration: none;
+	white-space: nowrap;
+}
+
+/* 좁은 화면: 메뉴(전체 계산기·가이드·소개)가 두 줄로 꺾이거나 옆으로 넘치지 않게 */
+@media (max-width: 420px) {
+	.header-inner {
+		gap: 10px;
+	}
+
+	.site-header nav {
+		gap: 10px;
+		font-size: 0.85rem;
+	}
+
+	.logo-text small {
+		display: none;
+	}
 }
 
 .site-footer {
