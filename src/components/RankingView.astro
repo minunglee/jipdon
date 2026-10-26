@@ -1,0 +1,220 @@
+---
+/**
+ * 전세가율 높은 동네 순위 (지역 하나). 빌드할 때 받은 아파트·빌라·오피스텔 표를 모두 HTML에 담고,
+ * 주택 종류 버튼은 이미 있는 표를 보였다 숨기기만 한다 (화면이 뜬 뒤 서버를 부르지 않음).
+ */
+import DataAsOf from './DataAsOf.astro';
+import Related from './Related.astro';
+import { NATIONWIDE, SIDOS, rankingHref, type Sido } from '../data/sidos';
+import { KINDS, fetchRanking, summarize } from '../lib/rankings';
+
+interface Props {
+	sido: Sido;
+}
+
+const { sido } = Astro.props;
+const nationwide = sido.slug === NATIONWIDE.slug;
+const rankings = await Promise.all(KINDS.map(({ kind }) => fetchRanking(kind, sido.name)));
+const first = rankings[0];
+const computed = first.computedAt
+	? new Date(first.computedAt).toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul', year: 'numeric', month: 'long', day: 'numeric' })
+	: '';
+const level = (ratio: number) => (ratio >= 80 ? 'warning' : ratio >= 70 ? 'caution' : 'safe');
+const riskHref = (regionCode: string, kind: string, umd: string) => `/jeonse-risk/?${new URLSearchParams({ region: regionCode, kind, q: umd })}`;
+---
+
+<h1>{sido.label} 전세가율 높은 동네 순위</h1>
+<p class="lead">
+	최근 {first.months}개월 실거래로 계산한 <strong>매매가 대비 전세가 비율</strong>이 높은 {sido.label} 동네입니다. 전세가율이 높을수록 집값이 조금만 내려도 보증금을 돌려받기 어려워질 수 있습니다.
+</p>
+<DataAsOf />
+
+<nav class="card region-nav" aria-label="지역 선택">
+	<div class="region-head">
+		<strong>지역</strong>
+		<button type="button" id="near-me" class="near-me">내 주변 지역 보기</button>
+	</div>
+	<ul class="region-list">
+		{
+			[NATIONWIDE, ...SIDOS].map((s) => (
+				<li>
+					<a href={s.slug === NATIONWIDE.slug ? '/jeonse-ranking/nationwide/' : rankingHref(s)} aria-current={s.slug === sido.slug ? 'page' : undefined}>
+						{s.label}
+					</a>
+				</li>
+			))
+		}
+	</ul>
+	<p id="near-me-note" class="muted near-note" hidden></p>
+</nav>
+
+<div class="segmented kind-tabs" role="radiogroup" aria-label="주택 종류">
+	{
+		KINDS.map(({ kind, label }, i) => (
+			<>
+				<input type="radio" id={`k-${kind}`} name="kind" value={kind} checked={i === 0} />
+				<label for={`k-${kind}`}>{label}</label>
+			</>
+		))
+	}
+</div>
+
+{
+	KINDS.map(({ kind, label }, i) => {
+		const ranking = rankings[i];
+		return (
+			<section class="kind-panel" data-kind={kind} hidden={i !== 0}>
+				<h2>{sido.label} {label} 전세가율 순위</h2>
+				<p>{summarize(sido.label, label, ranking, nationwide)}</p>
+				<p class="muted" style="margin-top: 0">
+					{ranking.since}부터 최근 {ranking.months}개월 · 표본 {ranking.minSamples}개 이상인 동 · {computed} 계산
+				</p>
+				<div class="card table-wrap">
+					<table class="rank-table">
+						<thead>
+							<tr><th>순위</th><th>동네</th><th>전세가율</th><th title="동 안 건물·면적 중 전세가율 80% 이상인 비율">80%↑</th><th>표본</th></tr>
+						</thead>
+						<tbody>
+							{ranking.rows.length === 0 ? (
+								<tr><td colspan="5" class="muted">표본이 충분한 동네가 없습니다.</td></tr>
+							) : (
+								ranking.rows.map((r) => (
+									<tr class={`level-${level(r.ratio)}`}>
+										<td>{r.rank}</td>
+										<td><a href={riskHref(r.regionCode, kind, r.umd)}>{r.regionName} {r.umd}</a></td>
+										<td class="rank-ratio">{r.ratio.toFixed(1)}%</td>
+										<td>{r.warningShare.toFixed(0)}%</td>
+										<td>{r.samples}개</td>
+									</tr>
+								))
+							)}
+						</tbody>
+					</table>
+				</div>
+			</section>
+		);
+	})
+}
+<p class="muted" style="font-size: 0.85rem">동네를 누르면 그 동의 건물별 전세가율을 볼 수 있습니다.</p>
+
+<section class="explain">
+	<h2>이렇게 계산했어요</h2>
+	<ol>
+		<li>건물마다 같은 전용면적 타입(소수점 버림)끼리 최근 12개월 <strong>매매 중앙값</strong>과 <strong>전세 중앙값</strong>을 구해 전세가율을 계산합니다.</li>
+		<li>동 안에 있는 이 값들의 <strong>중앙값</strong>을 그 동의 전세가율로 봅니다.</li>
+		<li>건물·면적 표본이 <strong>3개 미만</strong>인 동은 순위에서 뺍니다. 거래 한두 건으로 순위가 정해지지 않게 하려는 것입니다.</li>
+		<li>전세가율이 20% 미만이거나 150%를 넘는 값은 지분 거래·공공임대 같은 특수한 경우로 보고 뺍니다.</li>
+		<li>이 페이지는 매일 새 실거래 자료로 다시 만들어집니다.</li>
+	</ol>
+	<p class="formula">전세가율 = 전세 보증금 중앙값 ÷ 매매가 중앙값 × 100<br />80% 이상 = 그 동의 건물·면적 중 전세가율 80% 이상인 비율</p>
+
+	<h2>이 순위를 볼 때 주의할 점</h2>
+	<ul>
+		<li>순위가 높다고 그 동네의 모든 집이 위험한 것은 아닙니다. 반대로 순위에 없어도 개별 집은 위험할 수 있습니다. 계약할 집은 반드시 <a href="/jeonse-risk/">건물별로 확인</a>하세요.</li>
+		<li><strong>오피스텔</strong>은 원래 매매가가 잘 오르지 않아 전세가율이 높게 나오는 편입니다. 아파트·빌라와 따로 비교하세요.</li>
+		<li>거래가 적은 지역은 표본이 적어 값이 크게 흔들릴 수 있습니다. 표본 수를 함께 보세요.</li>
+		<li>전세가율에는 집에 걸린 대출(근저당)이 반영되지 않습니다. 등기부등본 확인은 꼭 필요합니다.</li>
+	</ul>
+	<p class="notice">국토교통부 실거래가 공개 자료로 계산한 참고 지표이며 특정 지역이나 주택의 안전을 보장하지 않습니다. 출처: 국토교통부 실거래가 공개시스템 (공공데이터포털)</p>
+</section>
+
+<Related />
+
+<script define:vars={{ sidos: SIDOS.map((s) => ({ slug: s.slug, label: s.label, lat: s.lat, lng: s.lng })) }}>
+	// 주택 종류: 이미 HTML에 있는 표를 보였다 숨기기만 한다
+	const panels = document.querySelectorAll('.kind-panel');
+	for (const radio of document.querySelectorAll('input[name="kind"]')) {
+		radio.addEventListener('change', () => {
+			for (const panel of panels) panel.hidden = panel.dataset.kind !== radio.value;
+		});
+	}
+
+	// 내 주변 지역: 위치는 이 브라우저 안에서만 써서 가장 가까운 시도를 고른다 (서버로 보내지 않음)
+	const button = document.getElementById('near-me');
+	const note = document.getElementById('near-me-note');
+	const say = (text) => {
+		note.hidden = false;
+		note.textContent = text;
+	};
+	button.addEventListener('click', () => {
+		if (!navigator.geolocation) return say('이 브라우저는 위치 확인을 지원하지 않습니다.');
+		say('위치를 확인하는 중…');
+		navigator.geolocation.getCurrentPosition(
+			({ coords }) => {
+				const rad = (d) => (d * Math.PI) / 180;
+				const distance = (s) => {
+					const x = rad(s.lng - coords.longitude) * Math.cos(rad((s.lat + coords.latitude) / 2));
+					const y = rad(s.lat - coords.latitude);
+					return x * x + y * y;
+				};
+				const nearest = sidos.reduce((a, b) => (distance(a) <= distance(b) ? a : b));
+				say(`가장 가까운 지역: ${nearest.label}`);
+				location.href = nearest.slug === 'seoul' ? '/jeonse-ranking/' : `/jeonse-ranking/${nearest.slug}/`;
+			},
+			() => say('위치를 확인하지 못했습니다. 위의 지역을 직접 골라 주세요.'),
+			{ timeout: 10000, maximumAge: 600000 },
+		);
+	});
+</script>
+
+<style>
+	.region-nav {
+		margin: 16px 0;
+		padding: 16px;
+	}
+
+	.region-head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 8px;
+		margin-bottom: 10px;
+	}
+
+	.near-me {
+		padding: 6px 12px;
+		background: var(--brand-tint);
+		color: var(--brand-strong);
+		border: 1px solid var(--border);
+		border-radius: 999px;
+		font: inherit;
+		font-size: 0.85rem;
+		font-weight: 700;
+		cursor: pointer;
+	}
+
+	.region-list {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 6px;
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.region-list a {
+		display: inline-block;
+		padding: 6px 12px;
+		border: 1px solid var(--border);
+		border-radius: 999px;
+		color: var(--text-soft);
+		font-size: 0.9rem;
+		text-decoration: none;
+	}
+
+	.region-list a[aria-current='page'] {
+		background: var(--brand-strong);
+		border-color: var(--brand-strong);
+		color: var(--on-brand);
+		font-weight: 700;
+	}
+
+	.near-note {
+		margin: 10px 0 0;
+		font-size: 0.85rem;
+	}
+
+	.kind-tabs {
+		margin-bottom: 8px;
+	}
+</style>
