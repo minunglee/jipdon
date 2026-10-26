@@ -23,7 +23,7 @@ const article = {
 	description: guide.desc,
 	inLanguage: 'ko-KR',
 	dateModified: GUIDES_CHECKED_AT,
-	author: { '@type': 'Organization', name: '집돈 계산기 (공인중개사 운영)', url: 'https://jipdon.com/about/' },
+	author: { '@type': 'Organization', name: '집돈 계산기 (공인중개사 자격 보유자 운영)', url: 'https://jipdon.com/about/' },
 	mainEntityOfPage: new URL(guideHref(guide), Astro.site).toString(),
 };
 ---
@@ -33,7 +33,7 @@ const article = {
 	<article class="guide">
 		<p class="guide-crumb"><a href="/guide/">집 계약 가이드</a></p>
 		<h1>{guide.title}</h1>
-		<p class="guide-meta">작성: 집돈 운영자 (공인중개사) · 법령 기준일 {checked}</p>
+		<p class="guide-meta">작성: 집돈 운영자 (공인중개사 자격 보유) · 법령 기준일 {checked}</p>
 		<slot />
 
 		<section class="guide-tools">
@@ -50,7 +50,7 @@ const article = {
 			</ul>
 		</section>
 
-		<p class="notice">이 글은 {checked} 기준 법령과 공개 자료로 작성한 일반 정보이며, 개별 계약에 대한 법률 자문이 아닙니다. 제도는 바뀔 수 있으니 계약 전에 출처의 최신 내용과 담당 기관을 꼭 확인하세요.</p>
+		<p class="notice">이 글은 {checked} 기준 법령과 공개 자료로 작성한 일반 정보이며, 개별 계약에 대한 법률 자문이 아닙니다. 제도는 바뀔 수 있으니 계약 전에 출처의 최신 내용과 담당 기관을 꼭 확인하세요. 집돈은 중개사무소가 아니며 매물 중개·광고를 하지 않습니다. 개별 거래는 개업공인중개사와 상담하세요.</p>
 	</article>
 
 	<section class="related">
