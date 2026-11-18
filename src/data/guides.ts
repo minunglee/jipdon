@@ -9,6 +9,8 @@ export interface Guide {
 	desc: string;
 	/** 글 끝에 연결할 계산기 */
 	tools: { href: string; name: string }[];
+	/** 이 글의 법령을 원문으로 확인한 날 (없으면 GUIDES_CHECKED_AT) */
+	checkedAt?: string;
 }
 
 export const GUIDES_CHECKED_AT = '2026-10-26';
@@ -49,6 +51,41 @@ export const GUIDES: Guide[] = [
 		title: '중개보수(복비) 계산과 협의: 상한요율은 상한일 뿐입니다',
 		desc: '주택·오피스텔 중개보수 상한요율표, 월세 거래금액 환산(×100, ×70), 부가세와 지급 시기, 협의 방법.',
 		tools: [{ href: '/brokerage-fee/', name: '중개보수(복비) 계산기' }, { href: '/rent-conversion/', name: '전월세 전환 계산기' }],
+	},
+	{
+		slug: 'move-in-fixed-date',
+		title: '전입신고·확정일자·대항력: 효력이 생기는 순서와 시점',
+		desc: '대항력은 전입 다음 날 0시, 근저당은 접수 당일. 하루 차이로 순위가 밀리지 않게 잔금일에 할 일을 순서대로 정리했습니다.',
+		tools: [{ href: '/jeonse-risk/', name: '전세 위험 확인 (전세가율)' }, { href: '/jeonse-loan/', name: '전세대출 이자 계산기' }],
+		checkedAt: '2026-11-18',
+	},
+	{
+		slug: 'renewal-right',
+		title: '계약갱신요구권: 언제 쓰고, 집주인이 거절할 수 있는 경우',
+		desc: '만기 6개월~2개월 전 요구, 1회 2년, 증액 5% 상한. 법이 정한 거절 사유 9가지와 실거주 거절 후 손해배상까지.',
+		tools: [{ href: '/rent-conversion/', name: '전월세 전환 계산기' }, { href: '/jeonse-loan/', name: '전세대출 이자 계산기' }],
+		checkedAt: '2026-11-18',
+	},
+	{
+		slug: 'deposit-not-returned',
+		title: '만기에 보증금을 못 돌려받을 때: 임차권등기명령부터 차례대로',
+		desc: '해지 통지, 내용증명, 보증보험 이행청구, 임차권등기명령, 지급명령과 소송까지. 이사 전에 꼭 지킬 순서.',
+		tools: [{ href: '/jeonse-risk/', name: '전세 위험 확인 (전세가율)' }],
+		checkedAt: '2026-11-18',
+	},
+	{
+		slug: 'jeonse-ratio-data',
+		title: '전세가율 데이터 제대로 읽는 법: 표본 수, 면적 묶음, 숨은 함정',
+		desc: '집돈이 전세가율을 계산하는 방법과, 숫자를 믿기 전에 확인할 표본 수·기간·공공임대·갱신 계약의 영향.',
+		tools: [{ href: '/jeonse-risk/', name: '전세 위험 확인 (전세가율)' }, { href: '/jeonse-ranking/', name: '전세가율 높은 동네 순위' }],
+		checkedAt: '2026-11-18',
+	},
+	{
+		slug: 'real-price-data',
+		title: '실거래가 해석법: 신고 시차, 계약 해제, 갱신 계약이 숫자를 바꾸는 이유',
+		desc: '30일 신고 기한 때문에 비어 보이는 최근 달, 해제 거래, 신고 대상이 아닌 전월세, 5% 상한 갱신 계약을 읽는 법.',
+		tools: [{ href: '/jeonse-risk/', name: '전세 위험 확인 (전세가율)' }, { href: '/jeonse-ranking/', name: '전세가율 높은 동네 순위' }],
+		checkedAt: '2026-11-18',
 	},
 ];
 
