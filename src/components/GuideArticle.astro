@@ -15,14 +15,15 @@ interface Props {
 const { slug, sources } = Astro.props;
 const guide = GUIDES.find((g) => g.slug === slug) as Guide;
 const others = GUIDES.filter((g) => g.slug !== slug);
-const checked = new Date(GUIDES_CHECKED_AT).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' });
+const checkedAt = guide.checkedAt ?? GUIDES_CHECKED_AT;
+const checked = new Date(checkedAt).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' });
 const article = {
 	'@context': 'https://schema.org',
 	'@type': 'Article',
 	headline: guide.title,
 	description: guide.desc,
 	inLanguage: 'ko-KR',
-	dateModified: GUIDES_CHECKED_AT,
+	dateModified: checkedAt,
 	author: { '@type': 'Organization', name: '집돈 계산기 (공인중개사 자격 보유자 운영)', url: 'https://jipdon.com/about/' },
 	mainEntityOfPage: new URL(guideHref(guide), Astro.site).toString(),
 };
