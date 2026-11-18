@@ -37,3 +37,14 @@ export const SIDOS: Sido[] = [
 
 /** 서울은 기존 주소(/jeonse-ranking/)를 그대로 쓴다 */
 export const rankingHref = (sido: Sido) => (sido.slug === 'seoul' ? '/jeonse-ranking/' : `/jeonse-ranking/${sido.slug}/`);
+
+/** 검색 색인에 남기는 순위 페이지: 서울(/jeonse-ranking/)과 전국. 나머지 시도 페이지는 noindex + 사이트맵 제외 */
+export const INDEXED_RANKING_SLUGS = new Set(['seoul', NATIONWIDE.slug]);
+
+export const isNoindexRankingSlug = (slug: string) => !INDEXED_RANKING_SLUGS.has(slug);
+
+/** 사이트맵에서 뺄 주소인지 (예: https://jipdon.com/jeonse-ranking/busan/) */
+export const isNoindexRankingUrl = (url: string) => {
+	const match = /\/jeonse-ranking\/([^/]+)\/$/.exec(new URL(url).pathname);
+	return match !== null && isNoindexRankingSlug(match[1]);
+};

@@ -1,4 +1,6 @@
 User-agent: *
 Allow: /
+# 화면이 부르는 데이터·통계 API는 페이지가 아니다
+Disallow: /api/
 
 Sitemap: https://jipdon.com/sitemap-index.xml

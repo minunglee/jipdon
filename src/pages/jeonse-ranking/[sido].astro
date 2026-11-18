@@ -1,7 +1,7 @@
 ---
 import Base from '../../layouts/Base.astro';
 import RankingView from '../../components/RankingView.astro';
-import { NATIONWIDE, SIDOS, type Sido } from '../../data/sidos';
+import { NATIONWIDE, SIDOS, isNoindexRankingSlug, type Sido } from '../../data/sidos';
 
 /** 서울은 /jeonse-ranking/ 에 있으므로 나머지 16개 시도와 전국만 만든다 */
 export function getStaticPaths() {
@@ -9,11 +9,17 @@ export function getStaticPaths() {
 }
 
 const { sido } = Astro.props as { sido: Sido };
+
+// 시도별 페이지는 같은 틀에 숫자만 달라 구글이 색인하지 않았다 (Search Console "발견됨 - 색인 생성 안 됨").
+// 사이트 품질 평가에서 빼려고 서울(/jeonse-ranking/)과 전국만 색인하고, 나머지 시도는 noindex + 사이트맵 제외.
+// 페이지는 그대로 열리고 시도 선택 링크로 이동할 수 있다.
+const noindex = isNoindexRankingSlug(sido.slug);
 ---
 
 <Base
 	title={`${sido.label} 전세가율 높은 동네 순위 (아파트·빌라·오피스텔)`}
 	description={`국토교통부 실거래가로 계산한 ${sido.label} 동네별 전세가율 순위. 최근 12개월 매매가 대비 전세가가 높은 동네를 아파트·빌라·오피스텔별로 확인하세요. 매일 갱신.`}
+	noindex={noindex}
 >
 	<RankingView sido={sido} />
 </Base>
